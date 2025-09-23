@@ -19,13 +19,7 @@ function EmoteWheel.Wheel:CreateFrame()
     self.frame:SetFrameStrata("DIALOG")
     self.frame:SetClampedToScreen(true)
     self.frame:Hide()
-    
-    -- УБИРАЕМ черный фон всего фрейма - делаем полностью прозрачным
-    -- self.background = self.frame:CreateTexture(nil, "BACKGROUND")
-    -- self.background:SetAllPoints(true)
-    -- self.background:SetTexture("Interface\\Tooltips\\UI-Tooltip-Background")
-    -- self.background:SetVertexColor(0, 0, 0, 0.9)
-    
+        
     -- Центральный круг-индикатор группы (уменьшаем и делаем красивее)
     self.centerCircle = self.frame:CreateTexture(nil, "ARTWORK")
     self.centerCircle:SetSize(60, 60) -- Уменьшили размер
@@ -33,6 +27,14 @@ function EmoteWheel.Wheel:CreateFrame()
     self.centerCircle:SetTexture("Interface\\AddOns\\EmoteWheel\\Textures\\Circle") -- Или используем WHITE8X8
     self.centerCircle:SetVertexColor(0.5, 0.5, 0.5, 0.6) -- Более прозрачный
     
+    -- НАЗВАНИЕ ГРУППЫ (НОВОЕ) - над фреймом
+    self.groupTitle = self.frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    self.groupTitle:SetPoint("BOTTOM", self.frame, "TOP", 0, 10)
+    self.groupTitle:SetText("Группа эмоций")
+    self.groupTitle:SetTextColor(1, 1, 1)
+    self.groupTitle:SetShadowOffset(1, -1)
+    self.groupTitle:SetShadowColor(0, 0, 0, 0.8)
+	
     -- Перехватчик кликов снаружи
     self.clickCatcher = CreateFrame("Frame", nil, UIParent)
     self.clickCatcher:SetAllPoints(UIParent)
@@ -141,7 +143,7 @@ function EmoteWheel.Wheel:CreateGroupButton(groupIndex, angle)
     bg:SetAllPoints(true)
     bg:SetTexture("Interface\\AddOns\\EmoteWheel\\Textures\\Circle") -- Нужна круглая текстура
     -- Или создаем "круг" через маску (упрощенный вариант)
-    bg:SetTexture("Interface\\Buttons\\WHITE8X8")
+    -- bg:SetTexture("Interface\\Buttons\\WHITE8X8")
     bg:SetVertexColor(0, 0, 0, 0.8) -- Черная подложка
 	
     local colorBg = button:CreateTexture(nil, "ARTWORK")
@@ -174,6 +176,28 @@ function EmoteWheel.Wheel:CreateGroupButton(groupIndex, angle)
     button:SetScript("OnEnter", function()
         colorBg:SetAlpha(1.0)
         bg:SetAlpha(1.0)
+		
+        -- УЛУЧШЕННАЯ ПОДСКАЗКА (НОВОЕ)
+        local groupData = EmoteWheelData.groups[groupIndex]
+        local groupName = groupData and groupData.name or "Группа "..groupIndex
+        local emoteCount = groupData and #groupData.emotes or 0
+        
+        GameTooltip:SetOwner(button, "ANCHOR_CURSOR")
+        GameTooltip:SetText(groupName, color[1], color[2], color[3])
+        GameTooltip:AddLine(emoteCount .. " эмоций", 0.3, 0.3, 0.3)
+        
+        -- Показываем первые 3 эмоции из группы
+        -- if groupData and groupData.emotes then
+            -- GameTooltip:AddLine(" ", 1, 1, 1) -- Пустая строка
+            -- for i = 1, math.min(3, #groupData.emotes) do
+                -- GameTooltip:AddLine("• " .. groupData.emotes[i].name, 0.9, 0.9, 0.9)
+            -- end
+            -- if #groupData.emotes > 3 then
+                -- GameTooltip:AddLine("... и еще " .. (#groupData.emotes - 3), 0.7, 0.7, 0.7)
+            -- end
+        -- end
+        
+        GameTooltip:Show()		
     end)	
     
     button:SetScript("OnLeave", function()
@@ -283,6 +307,12 @@ function EmoteWheel.Wheel:SelectGroup(groupIndex)
     local color = EmoteWheelConfig.groupColors[groupIndex] or {1, 1, 1}
     self.centerCircle:SetVertexColor(color[1], color[2], color[3], 0.4) -- Более прозрачный
     
+    -- ОБНОВЛЯЕМ НАЗВАНИЕ ГРУППЫ (НОВОЕ)
+    local groupData = EmoteWheelData.groups[groupIndex]
+    local groupName = groupData and groupData.name or ("Группа "..groupIndex)
+    self.groupTitle:SetText(groupName)
+    self.groupTitle:SetTextColor(color[1], color[2], color[3]) -- Цвет текста как у группы
+
     -- Обновляем кнопки эмоций с новыми цветами
     self:UpdateEmoteButtons()
     
