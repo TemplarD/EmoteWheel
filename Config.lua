@@ -1,21 +1,17 @@
---[[
-    Конфигурация аддона EmoteWheel
-]]
-
 EmoteWheelConfig = {
-    -- Радиусы колец
-    groupRingRadius = 100,    -- Радиус кольца групп (внешнее)
-    emoteRingRadius = 60,     -- Радиус кольца эмоций (внутреннее)
+    -- Радиусы для кругового меню
+    groupRingRadius = 100,     -- Радиус для групп
+    emoteRingRadius = 150,     -- Радиус для эмоций
     
-    -- Размеры кнопок
-    groupButtonSize = 40,     -- Размер кнопок групп
-    emoteButtonWidth = 80,    -- Ширина кнопок эмоций
-    emoteButtonHeight = 25,   -- Высота кнопок эмоций
+    -- Размеры элементов
+    groupButtonSize = 40,      -- Размер кнопок групп
+    emoteButtonWidth = 120,    -- Ширина кнопок эмоций
+    emoteButtonHeight = 25,    -- Высота кнопок эмоций
     
-    -- Количество групп эмоций (ДОБАВЛЕНО!)
+    -- Количество групп
     maxGroups = 4,
     
-    -- Цвета групп (R, G, B значения)
+    -- Цвета групп
     groupColors = {
         {1.0, 0.2, 0.2},    -- Красный
         {0.2, 1.0, 0.2},    -- Зеленый
@@ -28,12 +24,7 @@ EmoteWheelConfig = {
     },
     
     -- Настройки прозрачности
-    backgroundAlpha = 0.8,
-    buttonAlpha = 0.9,
-    unselectedAlpha = 0.6,
-    
-    -- Настройки шрифта
-    font = "Fonts\\FRIZQT__.TTF",
-    fontSizeSmall = 10,
-    fontSizeNormal = 12
+    backgroundAlpha = 0.9,
+    groupAlpha = 0.8,
+    emoteAlpha = 0.7
 }
