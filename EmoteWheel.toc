@@ -1,0 +1,13 @@
+## Interface: 30300
+## Title: Emote Wheel
+## Notes: Wheel menu for quick emote selection
+## Author: templard
+## Version: 1.0.0
+## SavedVariables: EmoteWheelDB
+## GitHub: https://github.com/templard/EmoteWheel
+
+Core.lua
+Config.lua
+Data_Emotes.lua
+UI_Options.lua
+UI_Wheel.lua
