@@ -9,7 +9,7 @@ function EmoteWheel.Wheel:Initialize()
     self:CreateFrame()
     self.currentGroup = EmoteWheelDB.currentGroup or 1
     self:Hide()
-    EmoteWheel:Print("Круговое меню эмоций инициализировано! Shift+ПКМ для вызова.")
+    EmoteWheel:Print("Улучшенное круговое меню загружено!")
 end
 
 function EmoteWheel.Wheel:CreateFrame()
@@ -20,18 +20,18 @@ function EmoteWheel.Wheel:CreateFrame()
     self.frame:SetClampedToScreen(true)
     self.frame:Hide()
     
-    -- Фон меню (круглый)
-    self.background = self.frame:CreateTexture(nil, "BACKGROUND")
-    self.background:SetAllPoints(true)
-    self.background:SetTexture("Interface\\Tooltips\\UI-Tooltip-Background")
-    self.background:SetVertexColor(0, 0, 0, 0.9)
+    -- УБИРАЕМ черный фон всего фрейма - делаем полностью прозрачным
+    -- self.background = self.frame:CreateTexture(nil, "BACKGROUND")
+    -- self.background:SetAllPoints(true)
+    -- self.background:SetTexture("Interface\\Tooltips\\UI-Tooltip-Background")
+    -- self.background:SetVertexColor(0, 0, 0, 0.9)
     
-    -- Центральный круг-индикатор
+    -- Центральный круг-индикатор группы (уменьшаем и делаем красивее)
     self.centerCircle = self.frame:CreateTexture(nil, "ARTWORK")
-    self.centerCircle:SetSize(80, 80)
+    self.centerCircle:SetSize(60, 60) -- Уменьшили размер
     self.centerCircle:SetPoint("CENTER")
-    self.centerCircle:SetTexture("Interface\\Buttons\\WHITE8X8")
-    self.centerCircle:SetVertexColor(0.3, 0.3, 0.3, 0.8)
+    self.centerCircle:SetTexture("Interface\\AddOns\\EmoteWheel\\Textures\\Circle") -- Или используем WHITE8X8
+    self.centerCircle:SetVertexColor(0.5, 0.5, 0.5, 0.6) -- Более прозрачный
     
     -- Перехватчик кликов снаружи
     self.clickCatcher = CreateFrame("Frame", nil, UIParent)
@@ -56,13 +56,71 @@ function EmoteWheel.Wheel:CreateFrame()
     self:CreateEmoteButtons()
 end
 
+function EmoteWheel.Wheel:CreateCentralDiagram()
+    -- Создаем кольцо из секторов-кнопок групп
+    self.groupSectors = {}
+    local sectorCount = EmoteWheelConfig.maxGroups or 4
+    local innerRadius = 40  -- Внутренний радиус кольца
+    local outerRadius = 80  -- Внешний радиус кольца
+    
+    for i = 1, sectorCount do
+        local sector = self:CreateGroupSector(i, innerRadius, outerRadius, sectorCount)
+        self.groupSectors[i] = sector
+    end
+end
+
+function EmoteWheel.Wheel:CreateGroupSector(sectorIndex, innerRadius, outerRadius, totalSectors)
+    local sector = CreateFrame("Button", "EmoteWheelSector"..sectorIndex, self.frame)
+    sector:SetFrameStrata("BACKGROUND")
+    sector.groupIndex = sectorIndex
+    
+    -- Вычисляем углы сектора
+    local startAngle = ((sectorIndex - 1) / totalSectors) * 2 * math.pi
+    local endAngle = (sectorIndex / totalSectors) * 2 * math.pi
+    
+    -- Создаем текстуру сектора (простой треугольник для начала)
+    local texture = sector:CreateTexture(nil, "BACKGROUND")
+    texture:SetTexture("Interface\\Buttons\\WHITE8X8")
+    local color = EmoteWheelConfig.groupColors[sectorIndex] or {1, 1, 1}
+    texture:SetVertexColor(color[1], color[2], color[3], 0.6)
+    
+    -- Позиционируем сектор (упрощенная версия - круговая кнопка)
+    sector:SetSize(outerRadius * 2, outerRadius * 2)
+    sector:SetPoint("CENTER")
+    
+    -- Текст номера группы в центре сектора
+    local text = sector:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    text:SetPoint("CENTER")
+    text:SetText(sectorIndex)
+    text:SetTextColor(1, 1, 1)
+    
+    sector:SetScript("OnClick", function()
+        self:SelectGroup(sectorIndex)
+    end)
+    
+    sector:SetScript("OnEnter", function()
+        texture:SetAlpha(0.9)
+        local groupName = EmoteWheelData.groups[sectorIndex] and EmoteWheelData.groups[sectorIndex].name or "Группа "..sectorIndex
+        GameTooltip:SetOwner(sector, "ANCHOR_CURSOR")
+        GameTooltip:SetText(groupName)
+        GameTooltip:Show()
+    end)
+    
+    sector:SetScript("OnLeave", function()
+        texture:SetAlpha(0.6)
+        GameTooltip:Hide()
+    end)
+    
+    sector.texture = texture
+    return sector
+end
+
 function EmoteWheel.Wheel:CreateGroupButtons()
     self.groupButtons = {}
-    local groupCount = math.min(EmoteWheelConfig.maxGroups or 4, 8) -- Максимум 8 групп по кругу
-    local radius = 100 -- Радиус круга для групп
+    local groupCount = math.min(EmoteWheelConfig.maxGroups or 4, 8)
+    local radius = 50 -- Уменьшили радиус - ближе к центру
     
     for i = 1, groupCount do
-        -- Вычисляем позицию на круге
         local angle = (i / groupCount) * 2 * math.pi
         local x = math.cos(angle) * radius
         local y = math.sin(angle) * radius
@@ -75,16 +133,24 @@ end
 
 function EmoteWheel.Wheel:CreateGroupButton(groupIndex, angle)
     local button = CreateFrame("Button", "EmoteWheelGroupBtn"..groupIndex, self.frame)
-    button:SetSize(40, 40)
+    button:SetSize(35, 35)
     button.groupIndex = groupIndex
     
     -- Фон кнопки (круглый)
     local bg = button:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints(true)
+    bg:SetTexture("Interface\\AddOns\\EmoteWheel\\Textures\\Circle") -- Нужна круглая текстура
+    -- Или создаем "круг" через маску (упрощенный вариант)
     bg:SetTexture("Interface\\Buttons\\WHITE8X8")
+    bg:SetVertexColor(0, 0, 0, 0.8) -- Черная подложка
+	
+    local colorBg = button:CreateTexture(nil, "ARTWORK")
+    colorBg:SetSize(30, 30)
+    colorBg:SetPoint("CENTER")
+    colorBg:SetTexture("Interface\\Buttons\\WHITE8X8")
     local color = EmoteWheelConfig.groupColors[groupIndex] or {1, 1, 1}
-    bg:SetVertexColor(color[1], color[2], color[3], 0.8)
-    button.bg = bg
+    colorBg:SetVertexColor(color[1], color[2], color[3], 0.8)
+    button.colorBg = colorBg	
     
     -- Номер группы в центре
     local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -97,17 +163,22 @@ function EmoteWheel.Wheel:CreateGroupButton(groupIndex, angle)
         self:SelectGroup(groupIndex)
     end)
     
+    -- button:SetScript("OnEnter", function()
+        -- bg:SetAlpha(1.0)
+        -- local groupName = EmoteWheelData.groups[groupIndex] and EmoteWheelData.groups[groupIndex].name or "Группа "..groupIndex
+        -- GameTooltip:SetOwner(button, "ANCHOR_CURSOR")
+        -- GameTooltip:SetText(groupName)
+        -- GameTooltip:Show()
+    -- end)
+	
     button:SetScript("OnEnter", function()
+        colorBg:SetAlpha(1.0)
         bg:SetAlpha(1.0)
-        local groupName = EmoteWheelData.groups[groupIndex] and EmoteWheelData.groups[groupIndex].name or "Группа "..groupIndex
-        GameTooltip:SetOwner(button, "ANCHOR_CURSOR")
-        GameTooltip:SetText(groupName)
-        GameTooltip:Show()
-    end)
+    end)	
     
     button:SetScript("OnLeave", function()
+        colorBg:SetAlpha(0.8)
         bg:SetAlpha(0.8)
-        GameTooltip:Hide()
     end)
     
     return button
@@ -156,41 +227,47 @@ end
 
 function EmoteWheel.Wheel:CreateEmoteButton(emoteData, index)
     local button = CreateFrame("Button", nil, self.frame)
-    button:SetSize(120, 25)
+    button:SetSize(110, 22) -- Немного уменьшили
     button.emoteData = emoteData
     
-    -- Фон кнопки эмоции
+    -- Фон кнопки эмоции - полупрозрачный в цвет группы
     local bg = button:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints(true)
     bg:SetTexture("Interface\\Tooltips\\UI-Tooltip-Background")
-    bg:SetVertexColor(0.1, 0.1, 0.1, 0.7)
+    
+    -- Цвет берем от текущей группы, но делаем очень прозрачным
+    local color = EmoteWheelConfig.groupColors[self.currentGroup] or {1, 1, 1}
+    bg:SetVertexColor(color[1] * 0.2, color[2] * 0.2, color[3] * 0.2, 0.3) -- Очень прозрачный
+    
+    -- Граница в цвет группы
+    local border = button:CreateTexture(nil, "BORDER")
+    border:SetAllPoints(true)
+    border:SetTexture("Interface\\Tooltips\\UI-Tooltip-Border")
+    border:SetVertexColor(color[1], color[2], color[3], 0.5)
+    
     button.bg = bg
+    button.border = border
     
     -- Текст эмоции
     local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     text:SetPoint("CENTER")
     text:SetText(emoteData.name)
-    text:SetTextColor(1, 1, 1)
+    text:SetTextColor(1, 1, 1) -- Белый текст
     
     button:SetScript("OnClick", function()
         self:ExecuteEmote(emoteData.command, emoteData.name)
     end)
     
     button:SetScript("OnEnter", function()
-        bg:SetVertexColor(0.3, 0.3, 0.3, 0.9)
-        text:SetTextColor(1, 0.8, 0)
-        GameTooltip:SetOwner(button, "ANCHOR_CURSOR")
-        GameTooltip:SetText(emoteData.name)
-        GameTooltip:AddLine("Нажмите для выполнения", 0.8, 0.8, 0.8)
-        GameTooltip:Show()
+        bg:SetVertexColor(color[1] * 0.4, color[2] * 0.4, color[3] * 0.4, 0.6) -- Ярче при наведении
+        border:SetVertexColor(color[1], color[2], color[3], 0.8)
+        text:SetTextColor(1, 0.9, 0.4) -- Золотистый при наведении
     end)
     
     button:SetScript("OnLeave", function()
-        -- Возвращаем цвет группы для фона
-        local color = EmoteWheelConfig.groupColors[self.currentGroup] or {1, 1, 1}
-        bg:SetVertexColor(color[1] * 0.3, color[2] * 0.3, color[3] * 0.3, 0.7)
+        bg:SetVertexColor(color[1] * 0.2, color[2] * 0.2, color[3] * 0.2, 0.3)
+        border:SetVertexColor(color[1], color[2], color[3], 0.5)
         text:SetTextColor(1, 1, 1)
-        GameTooltip:Hide()
     end)
     
     return button
@@ -200,27 +277,26 @@ function EmoteWheel.Wheel:SelectGroup(groupIndex)
     self.currentGroup = groupIndex
     EmoteWheelDB.currentGroup = groupIndex
     
-    -- Обновляем центральный круг цветом группы
+    -- Обновляем центральный круг цветом группы (сделаем его тоньше)
     local color = EmoteWheelConfig.groupColors[groupIndex] or {1, 1, 1}
-    self.centerCircle:SetVertexColor(color[1] * 0.5, color[2] * 0.5, color[3] * 0.5, 0.8)
+    self.centerCircle:SetVertexColor(color[1], color[2], color[3], 0.4) -- Более прозрачный
     
-    -- Обновляем кнопки эмоций
+    -- Обновляем кнопки эмоций с новыми цветами
     self:UpdateEmoteButtons()
     
     -- Подсвечиваем выбранную группу
     for i, btn in ipairs(self.groupButtons) do
         if i == groupIndex then
-            btn.bg:SetVertexColor(1, 1, 1, 1.0) -- Белый для выбранной
+            btn.colorBg:SetVertexColor(1, 1, 1, 1.0) -- Белая подсветка выбранной
             btn:SetAlpha(1.0)
+            btn:SetScale(1.1) -- Немного увеличиваем выбранную группу
         else
-            local color = EmoteWheelConfig.groupColors[i] or {1, 1, 1}
-            btn.bg:SetVertexColor(color[1], color[2], color[3], 0.6)
-            btn:SetAlpha(0.7)
+            local btnColor = EmoteWheelConfig.groupColors[i] or {1, 1, 1}
+            btn.colorBg:SetVertexColor(btnColor[1], btnColor[2], btnColor[3], 0.6)
+            btn:SetAlpha(0.6)
+            btn:SetScale(1.0) -- Обычный размер
         end
     end
-    
-    local groupName = EmoteWheelData.groups[groupIndex] and EmoteWheelData.groups[groupIndex].name or "Группа "..groupIndex
-    EmoteWheel:Print("Выбрана группа: " .. groupName)
 end
 
 function EmoteWheel.Wheel:ExecuteEmote(command, name)
