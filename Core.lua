@@ -1,11 +1,11 @@
 --[[
     Основной файл аддона EmoteWheel
-    Версия: 1.0.0
+    Версия: 1.1.0
 ]]
 
 -- Глобальная таблица аддона
 EmoteWheel = {}
-EmoteWheel.VERSION = "1.0.0"
+EmoteWheel.VERSION = "1.1.0"
 
 -- База данных для сохранения настроек
 EmoteWheelDB = EmoteWheelDB or {

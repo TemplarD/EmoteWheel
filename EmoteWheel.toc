@@ -2,7 +2,7 @@
 ## Title: Emote Wheel
 ## Notes: Wheel menu for quick emote selection
 ## Author: templard
-## Version: 1.0.0
+## Version: 1.1.0
 ## SavedVariables: EmoteWheelDB
 ## GitHub: https://github.com/templard/EmoteWheel
 
