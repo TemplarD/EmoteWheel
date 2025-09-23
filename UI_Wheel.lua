@@ -6,9 +6,10 @@ EmoteWheel.Wheel = {}
 
 function EmoteWheel.Wheel:Initialize()
     self:CreateFrame()
+    self:RegisterEscapeHandler() -- НОВОЕ	
     self.currentGroup = EmoteWheelDB.currentGroup or 1
     self:Hide()
-    EmoteWheel:Print("Колесо эмоций инициализировано. Shift+ПКМ для вызова.")
+    EmoteWheel:Print("Колесо эмоций инициализировано. Shift+ПКМ (по умолчанию) для вызова.")
 end
 
 function EmoteWheel.Wheel:CreateFrame()
@@ -24,6 +25,16 @@ function EmoteWheel.Wheel:CreateFrame()
     self.background:SetAllPoints(true)
     self.background:SetTexture("Interface\\Tooltips\\UI-Tooltip-Background")
     self.background:SetVertexColor(0, 0, 0, 0.9)
+	
+	-- НОВОЕ: Прозрачный фрейм для захвата кликов снаружи
+    self.clickCatcher = CreateFrame("Frame", nil, UIParent)
+    self.clickCatcher:SetAllPoints(UIParent)
+    self.clickCatcher:SetFrameStrata("DIALOG")
+    self.clickCatcher:EnableMouse(true)
+    self.clickCatcher:SetScript("OnMouseDown", function()
+        self:Hide()
+    end)
+    self.clickCatcher:Hide()
     
     -- Заголовок
     self.title = self.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -185,15 +196,32 @@ function EmoteWheel.Wheel:Show()
     local scale = UIParent:GetEffectiveScale()
     self.frame:ClearAllPoints()
     self.frame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / scale, y / scale)
+
+    -- НОВОЕ: Показываем перехватчик кликов
+    self.clickCatcher:Show()
     
     -- Обновляем отображение для текущей группы
     self:SelectGroup(self.currentGroup)
     
     self.frame:Show()
+	
+    -- НОВОЕ: Захватываем фокус ввода
+    self.frame:SetFocus()	
 end
 
 function EmoteWheel.Wheel:Hide()
+    -- НОВОЕ: Скрываем перехватчик кликов
+    self.clickCatcher:Hide()
     self.frame:Hide()
+end
+
+-- НОВОЕ: Обработка клавиши ESC
+function EmoteWheel.Wheel:RegisterEscapeHandler()
+    self.frame:SetScript("OnKeyDown", function(_, key)
+        if key == "ESCAPE" then
+            self:Hide()
+        end
+    end)
 end
 
 function EmoteWheel.Wheel:SetGroup(groupIndex)
