@@ -1,0 +1,12 @@
+# Игнорируем временные файлы
+*.tmp
+*.bak
+*.log
+
+# Игнорируем служебные файлы Windows
+Thumbs.db
+Desktop.ini
+
+# Игнорируем папки IDE
+.vscode/
+.idea/
