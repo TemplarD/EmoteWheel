@@ -363,6 +363,14 @@ function EmoteWheel.Wheel:Show()
 end
 
 function EmoteWheel.Wheel:Hide()
+    -- -- Скрываем тултип при закрытии колеса
+    -- if GameTooltip:IsOwned(self.frame) or GameTooltip:IsShown() then
+        -- GameTooltip:Hide()
+    -- end
+	
+	-- Гарантированно скрываем все тултипы
+    GameTooltip:Hide()
+	
     self.clickCatcher:Hide()
     self.frame:Hide()
 end
