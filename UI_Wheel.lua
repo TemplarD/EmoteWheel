@@ -203,7 +203,7 @@ function EmoteWheel.Wheel:UpdateEmoteButtons()
     local emotes = groupData.emotes
     local emoteCount = #emotes
     local groupRadius = 100 -- Радиус групп
-    local emoteRadius = 150 -- Радиус для эмоций (внешнее кольцо)
+    local emoteRadius = 130 -- Радиус для эмоций (внешнее кольцо)
     
     -- Вычисляем угол начала для эмоций текущей группы
     local groupAngle = ((self.currentGroup - 1) / (EmoteWheelConfig.maxGroups or 4)) * 2 * math.pi
@@ -227,7 +227,7 @@ end
 
 function EmoteWheel.Wheel:CreateEmoteButton(emoteData, index)
     local button = CreateFrame("Button", nil, self.frame)
-    button:SetSize(110, 22) -- Немного уменьшили
+    button:SetSize(120, 28) -- Немного уменьшили
     button.emoteData = emoteData
     
     -- Фон кнопки эмоции - полупрозрачный в цвет группы
@@ -253,6 +253,8 @@ function EmoteWheel.Wheel:CreateEmoteButton(emoteData, index)
     text:SetPoint("CENTER")
     text:SetText(emoteData.name)
     text:SetTextColor(1, 1, 1) -- Белый текст
+    text:SetShadowOffset(1, -1) -- Добавляем тень для лучшей читаемости
+    text:SetShadowColor(0, 0, 0, 0.8)
     
     button:SetScript("OnClick", function()
         self:ExecuteEmote(emoteData.command, emoteData.name)
