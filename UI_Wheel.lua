@@ -205,8 +205,6 @@ function EmoteWheel.Wheel:Show()
     
     self.frame:Show()
 	
-    -- НОВОЕ: Захватываем фокус ввода
-    self.frame:SetFocus()	
 end
 
 function EmoteWheel.Wheel:Hide()
@@ -222,6 +220,9 @@ function EmoteWheel.Wheel:RegisterEscapeHandler()
             self:Hide()
         end
     end)
+	
+    -- Включаем обработку клавиш для фрейма
+    self.frame:EnableKeyboard(true)	
 end
 
 function EmoteWheel.Wheel:SetGroup(groupIndex)
