@@ -12,6 +12,27 @@ function EmoteWheel.Wheel:Initialize()
     EmoteWheel:Print("Улучшенное круговое меню загружено!")
 end
 
+-- Функция применения настроек шрифта (НОВОЕ)
+function EmoteWheel.Wheel:ApplyFontSettings(fontString, fontType)
+    local fontSettings = EmoteWheelConfig.fonts[fontType]
+    if not fontSettings then return end
+    
+    fontString:SetFont(fontSettings.font, fontSettings.size, fontSettings.outline)
+end
+
+-- Функция применения цветовой схемы (НОВОЕ)
+function EmoteWheel.Wheel:ApplyColorToButton(button, groupIndex, isSelected)
+    local color = EmoteWheelConfig.groupColors[groupIndex] or {1, 1, 1}
+    
+    if isSelected then
+        button.colorBg:SetVertexColor(1, 1, 1, 1.0) -- Белый для выбранной
+        button.border:SetVertexColor(1, 1, 1, 0.8)
+    else
+        button.colorBg:SetVertexColor(color[1], color[2], color[3], 0.7)
+        button.border:SetVertexColor(1, 1, 1, 0)
+    end
+end
+
 function EmoteWheel.Wheel:CreateFrame()
     self.frame = CreateFrame("Frame", "EmoteWheelFrame", UIParent)
     self.frame:SetSize(350, 350) -- Увеличили для кругового расположения
@@ -34,6 +55,7 @@ function EmoteWheel.Wheel:CreateFrame()
     self.groupTitle:SetTextColor(1, 1, 1)
     self.groupTitle:SetShadowOffset(1, -1)
     self.groupTitle:SetShadowColor(0, 0, 0, 0.8)
+    self:ApplyFontSettings(self.groupTitle, "groupTitle") -- НОВОЕ	
 	
     -- Перехватчик кликов снаружи
     self.clickCatcher = CreateFrame("Frame", nil, UIParent)
@@ -159,7 +181,7 @@ function EmoteWheel.Wheel:CreateGroupButton(groupIndex, angle)
     border:SetSize(43, 43)
     border:SetPoint("CENTER")
     border:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
-    border:SetVertexColor(0.1, 0.1, 0.1, 0.8)
+    border:SetVertexColor(0.1, 0.1, 0.1, 1)
     button.border = border	
     
     -- Номер группы в центре
@@ -167,20 +189,15 @@ function EmoteWheel.Wheel:CreateGroupButton(groupIndex, angle)
     text:SetPoint("CENTER")
     text:SetText(groupIndex)
     text:SetTextColor(1, 1, 1)
+    text:SetShadowOffset(1, -1)
+    text:SetShadowColor(0, 0, 0, 0.8)
+    self:ApplyFontSettings(text, "groupButtons") -- НОВОЕ	
     
     -- Обработчики событий
     button:SetScript("OnClick", function()
         self:SelectGroup(groupIndex)
     end)
     
-    -- button:SetScript("OnEnter", function()
-        -- bg:SetAlpha(1.0)
-        -- local groupName = EmoteWheelData.groups[groupIndex] and EmoteWheelData.groups[groupIndex].name or "Группа "..groupIndex
-        -- GameTooltip:SetOwner(button, "ANCHOR_CURSOR")
-        -- GameTooltip:SetText(groupName)
-        -- GameTooltip:Show()
-    -- end)
-	
     button:SetScript("OnEnter", function()
         colorBg:SetAlpha(1.0)
         bg:SetAlpha(1.0)
@@ -287,6 +304,7 @@ function EmoteWheel.Wheel:CreateEmoteButton(emoteData, index)
     text:SetTextColor(1, 1, 1) -- Белый текст
     text:SetShadowOffset(1, -1) -- Добавляем тень для лучшей читаемости
     text:SetShadowColor(0, 0, 0, 0.8)
+    self:ApplyFontSettings(text, "emoteButtons") -- НОВОЕ	
     
     button:SetScript("OnClick", function()
         self:ExecuteEmote(emoteData.command, emoteData.name)
@@ -330,7 +348,7 @@ function EmoteWheel.Wheel:SelectGroup(groupIndex)
             btn.colorBg:SetVertexColor(1, 1, 1, 1.0) -- Белая подсветка выбранной
             btn.border:SetVertexColor(1, 1, 1, 0.8) -- Белая обводка			
             btn:SetAlpha(1.0)
-            btn:SetScale(1.15) -- Немного увеличиваем выбранную группу
+            btn:SetScale(0.85) -- Немного увеличиваем выбранную группу
         else
             local btnColor = EmoteWheelConfig.groupColors[i] or {1, 1, 1}
             btn.colorBg:SetVertexColor(btnColor[1], btnColor[2], btnColor[3], 0.6)

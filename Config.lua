@@ -26,5 +26,28 @@ EmoteWheelConfig = {
     -- Настройки прозрачности
     backgroundAlpha = 0.9,
     groupAlpha = 0.8,
-    emoteAlpha = 0.7
+    emoteAlpha = 0.7,
+	
+    -- НАСТРОЙКИ ШРИФТОВ (НОВОЕ)
+    fonts = {
+        groupTitle = {
+            font = "Fonts\\FRIZQT__.TTF",
+            size = 26,
+            outline = "NORMAL" -- NORMAL, THICK, OUTLINE, MONOCHROME
+        },
+        emoteButtons = {
+            font = "Fonts\\ARIALN.TTF", 
+            size = 20,
+            outline = "NORMAL"
+        },
+        groupButtons = {
+            font = "Fonts\\FRIZQT__.TTF",
+            size = 16,
+            outline = "OUTLINE"
+        }
+    },
+	
+    -- НОВЫЕ РЕЖИМЫ РАБОТЫ
+    interactionMode = "CLICK", -- CLICK, HOVER, TREE
+    enableHoverPreview = true	
 }
