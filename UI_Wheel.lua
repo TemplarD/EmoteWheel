@@ -22,10 +22,10 @@ function EmoteWheel.Wheel:CreateFrame()
         
     -- Центральный круг-индикатор группы (уменьшаем и делаем красивее)
     self.centerCircle = self.frame:CreateTexture(nil, "ARTWORK")
-    self.centerCircle:SetSize(60, 60) -- Уменьшили размер
+    self.centerCircle:SetSize(420, 420) -- Уменьшили размер
     self.centerCircle:SetPoint("CENTER")
-    self.centerCircle:SetTexture("Interface\\AddOns\\EmoteWheel\\Textures\\Circle") -- Или используем WHITE8X8
-    self.centerCircle:SetVertexColor(0.5, 0.5, 0.5, 0.6) -- Более прозрачный
+    self.centerCircle:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask") -- Или используем WHITE8X8
+    self.centerCircle:SetVertexColor(0.1, 0.1, 0.1, 1.0) -- Более прозрачный
     
     -- НАЗВАНИЕ ГРУППЫ (НОВОЕ) - над фреймом
     self.groupTitle = self.frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -135,24 +135,32 @@ end
 
 function EmoteWheel.Wheel:CreateGroupButton(groupIndex, angle)
     local button = CreateFrame("Button", "EmoteWheelGroupBtn"..groupIndex, self.frame)
-    button:SetSize(35, 35)
+    button:SetSize(42, 42)
     button.groupIndex = groupIndex
     
     -- Фон кнопки (круглый)
     local bg = button:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints(true)
-    bg:SetTexture("Interface\\AddOns\\EmoteWheel\\Textures\\Circle") -- Нужна круглая текстура
+    bg:SetTexture("Interface\\Minimap\\UI-Minimap-Background") -- Нужна круглая текстура
     -- Или создаем "круг" через маску (упрощенный вариант)
     -- bg:SetTexture("Interface\\Buttons\\WHITE8X8")
-    bg:SetVertexColor(0, 0, 0, 0.8) -- Черная подложка
+    bg:SetVertexColor(0, 0, 0, 0.5) -- Черная подложка
 	
     local colorBg = button:CreateTexture(nil, "ARTWORK")
-    colorBg:SetSize(30, 30)
+    colorBg:SetSize(42, 42)
     colorBg:SetPoint("CENTER")
-    colorBg:SetTexture("Interface\\Buttons\\WHITE8X8")
+    colorBg:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
     local color = EmoteWheelConfig.groupColors[groupIndex] or {1, 1, 1}
     colorBg:SetVertexColor(color[1], color[2], color[3], 0.8)
     button.colorBg = colorBg	
+	
+    -- Белая обводка для выбранной группы
+    local border = button:CreateTexture(nil, "BORDER")
+    border:SetSize(43, 43)
+    border:SetPoint("CENTER")
+    border:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
+    border:SetVertexColor(0.1, 0.1, 0.1, 0.8)
+    button.border = border	
     
     -- Номер группы в центре
     local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -251,7 +259,7 @@ end
 
 function EmoteWheel.Wheel:CreateEmoteButton(emoteData, index)
     local button = CreateFrame("Button", nil, self.frame)
-    button:SetSize(120, 28) -- Немного уменьшили
+    button:SetSize(130, 28) -- Немного уменьшили
     button.emoteData = emoteData
     
     -- Фон кнопки эмоции - полупрозрачный в цвет группы
@@ -320,11 +328,13 @@ function EmoteWheel.Wheel:SelectGroup(groupIndex)
     for i, btn in ipairs(self.groupButtons) do
         if i == groupIndex then
             btn.colorBg:SetVertexColor(1, 1, 1, 1.0) -- Белая подсветка выбранной
+            btn.border:SetVertexColor(1, 1, 1, 0.8) -- Белая обводка			
             btn:SetAlpha(1.0)
-            btn:SetScale(1.1) -- Немного увеличиваем выбранную группу
+            btn:SetScale(1.15) -- Немного увеличиваем выбранную группу
         else
             local btnColor = EmoteWheelConfig.groupColors[i] or {1, 1, 1}
             btn.colorBg:SetVertexColor(btnColor[1], btnColor[2], btnColor[3], 0.6)
+            btn.border:SetVertexColor(1, 1, 1, 0) -- Прозрачная обводка			
             btn:SetAlpha(0.6)
             btn:SetScale(1.0) -- Обычный размер
         end
