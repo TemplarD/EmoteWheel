@@ -33,7 +33,7 @@ function EmoteWheel:CreateOptionsFrame()
     
     -- Выбор группы эмоций (ИСПРАВЛЕННЫЙ выпадающий список)
     local groupText = self.optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    groupText:SetPoint("TOPLEFT", enableCheckbox, "BOTTOMLEFT", 0, -40)
+    groupText:SetPoint("TOPLEFT", enableCheckbox, "BOTTOMLEFT", 0, -15)
     groupText:SetText("Текущая группа эмоций:")
     
     local groupDropdown = CreateFrame("Frame", "EmoteWheelGroupDropdown", self.optionsFrame, "UIDropDownMenuTemplate")
@@ -71,24 +71,87 @@ function EmoteWheel:CreateOptionsFrame()
     
     -- Устанавливаем начальный текст
     UpdateDropdownText()
+	
+	-- Настройка размера шрифта эмоций
+	local fontSizeText = self.optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	fontSizeText:SetPoint("TOPLEFT", groupDropdown, "BOTTOMLEFT", 0, -5)
+	fontSizeText:SetText("Размер шрифта эмоций:")
+
+	local fontSizeSlider = CreateFrame("Slider", "EmoteWheelFontSizeSlider", self.optionsFrame, "OptionsSliderTemplate")
+	fontSizeSlider:SetPoint("TOPLEFT", fontSizeText, "BOTTOMLEFT", 0, -15)
+	fontSizeSlider:SetWidth(180)
+	fontSizeSlider:SetHeight(15)
+	fontSizeSlider:SetMinMaxValues(6, 30)
+	fontSizeSlider:SetValueStep(1)
+	fontSizeSlider:SetValue(EmoteWheelConfig.fonts.emoteButtons.size or 12)
+	fontSizeSlider:SetScript("OnValueChanged", function(self, value)
+		value = math.floor(value)
+		EmoteWheelConfig.fonts.emoteButtons.size = value
+		_G[self:GetName().."Text"]:SetText("Размер: " .. value)
+		-- Обновляем колесо если оно открыто
+		if EmoteWheel.Wheel and EmoteWheel.Wheel.frame and EmoteWheel.Wheel.frame:IsVisible() then
+			EmoteWheel.Wheel:SelectGroup(EmoteWheelDB.currentGroup or 1)
+		end
+	end)
+
+	_G[fontSizeSlider:GetName().."Low"]:SetText("6")
+	_G[fontSizeSlider:GetName().."High"]:SetText("30")
+	_G[fontSizeSlider:GetName().."Text"]:SetText("Размер: " .. (EmoteWheelConfig.fonts.emoteButtons.size or 12))	
     
     -- Чекбокс показа текста эмоций
     local textCheckbox = CreateFrame("CheckButton", "EmoteWheelTextCheckbox", self.optionsFrame, "OptionsCheckButtonTemplate")
-    textCheckbox:SetPoint("TOPLEFT", groupDropdown, "BOTTOMLEFT", 0, -30)
+    textCheckbox:SetPoint("TOPLEFT", fontSizeSlider, "BOTTOMLEFT", 0, -15)
     textCheckbox:SetChecked(EmoteWheelDB.showText)
     
     local textText = self.optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    textText:SetPoint("LEFT", textCheckbox, "RIGHT", 5, 0)
+    textText:SetPoint("TOPLEFT", textCheckbox, "RIGHT", 5, 5)
     textText:SetText("Показывать названия эмоций")
     
     textCheckbox:SetScript("OnClick", function(self)
         EmoteWheelDB.showText = self:GetChecked()
         EmoteWheel:Print("Названия эмоций " .. (EmoteWheelDB.showText and "включены" or "выключены"))
     end)
+	
+    -- Выбор клавиши для вызова (НОВАЯ НАСТРОЙКА)
+    local triggerText = self.optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    triggerText:SetPoint("TOPLEFT", textText, "BOTTOMLEFT", 0, -15)
+    triggerText:SetText("Клавиша для вызова:")
+    
+    local triggerDropdown = CreateFrame("Frame", "EmoteWheelTriggerDropdown", self.optionsFrame, "UIDropDownMenuTemplate")
+    triggerDropdown:SetPoint("TOPLEFT", triggerText, "BOTTOMLEFT", 0, -10)
+    triggerDropdown:SetWidth(120)
+    
+    UIDropDownMenu_Initialize(triggerDropdown, function(self, level)
+        local info = UIDropDownMenu_CreateInfo()
+        
+        local triggers = {
+            {text = "Shift + ПКМ", value = "SHIFT"},
+            {text = "Ctrl + ПКМ", value = "CTRL"},
+            {text = "Alt + ПКМ", value = "ALT"},
+            {text = "Только ПКМ", value = "NONE"}
+        }
+        
+        for i, trigger in ipairs(triggers) do
+            info.text = trigger.text
+            info.value = trigger.value
+            info.func = function(button)
+                EmoteWheelDB.triggerKey = button.value
+                UIDropDownMenu_SetText(triggerDropdown, trigger.text)
+                EmoteWheel:Print("Клавиша вызова изменена на: " .. trigger.text)
+            end
+            info.checked = (trigger.value == EmoteWheelDB.triggerKey)
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+    
+    -- Устанавливаем начальный текст
+    local currentTrigger = EmoteWheelDB.triggerKey or "SHIFT"
+    local triggerTextMap = {SHIFT = "Shift + ПКМ", CTRL = "Ctrl + ПКМ", ALT = "Alt + ПКМ", NONE = "Только ПКМ"}
+    UIDropDownMenu_SetText(triggerDropdown, triggerTextMap[currentTrigger])	
     
     -- Кнопка просмотра лога
     local logButton = CreateFrame("Button", nil, self.optionsFrame, "UIPanelButtonTemplate")
-    logButton:SetPoint("TOPLEFT", textCheckbox, "BOTTOMLEFT", 0, -30)
+    logButton:SetPoint("TOPLEFT", triggerDropdown, "BOTTOMLEFT", 0, -15)
     logButton:SetSize(120, 25)
     logButton:SetText("Просмотр лога")
     logButton:SetScript("OnClick", function()
@@ -131,43 +194,6 @@ function EmoteWheel:CreateOptionsFrame()
     
     -- Создаем фрейм лога
     self:CreateLogFrame()
-	
-	    -- Выбор клавиши для вызова (НОВАЯ НАСТРОЙКА)
-    local triggerText = self.optionsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    triggerText:SetPoint("TOPLEFT", groupDropdown, "BOTTOMLEFT", 0, -40)
-    triggerText:SetText("Клавиша для вызова:")
-    
-    local triggerDropdown = CreateFrame("Frame", "EmoteWheelTriggerDropdown", self.optionsFrame, "UIDropDownMenuTemplate")
-    triggerDropdown:SetPoint("TOPLEFT", triggerText, "BOTTOMLEFT", 0, -10)
-    triggerDropdown:SetWidth(120)
-    
-    UIDropDownMenu_Initialize(triggerDropdown, function(self, level)
-        local info = UIDropDownMenu_CreateInfo()
-        
-        local triggers = {
-            {text = "Shift + ПКМ", value = "SHIFT"},
-            {text = "Ctrl + ПКМ", value = "CTRL"},
-            {text = "Alt + ПКМ", value = "ALT"},
-            {text = "Только ПКМ", value = "NONE"}
-        }
-        
-        for i, trigger in ipairs(triggers) do
-            info.text = trigger.text
-            info.value = trigger.value
-            info.func = function(button)
-                EmoteWheelDB.triggerKey = button.value
-                UIDropDownMenu_SetText(triggerDropdown, trigger.text)
-                EmoteWheel:Print("Клавиша вызова изменена на: " .. trigger.text)
-            end
-            info.checked = (trigger.value == EmoteWheelDB.triggerKey)
-            UIDropDownMenu_AddButton(info)
-        end
-    end)
-    
-    -- Устанавливаем начальный текст
-    local currentTrigger = EmoteWheelDB.triggerKey or "SHIFT"
-    local triggerTextMap = {SHIFT = "Shift + ПКМ", CTRL = "Ctrl + ПКМ", ALT = "Alt + ПКМ", NONE = "Только ПКМ"}
-    UIDropDownMenu_SetText(triggerDropdown, triggerTextMap[currentTrigger])
 	
 end
 
