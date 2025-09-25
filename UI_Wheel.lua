@@ -251,8 +251,9 @@ function EmoteWheel.Wheel:UpdateEmoteButtons()
     
     local emotes = groupData.emotes
     local emoteCount = #emotes
-    local groupRadius = 100 -- Радиус групп
-    local emoteRadius = 130 -- Радиус для эмоций (внешнее кольцо)
+    local emoteButtonSize = EmoteWheelDB.emoteButtonSize or 35
+    local groupRadius = (EmoteWheelDB.buttonSize or 50) * 1.2
+    local emoteRadius = groupRadius + emoteButtonSize * 1.5 -- Динамический радиус
     
     -- Вычисляем угол начала для эмоций текущей группы
     local groupAngle = ((self.currentGroup - 1) / (EmoteWheelConfig.maxGroups or 4)) * 2 * math.pi
@@ -268,9 +269,15 @@ function EmoteWheel.Wheel:UpdateEmoteButtons()
         button:SetPoint("CENTER", self.frame, "CENTER", x, y)
         self.emoteButtons[i] = button
         
-        -- Подсвечиваем фон эмоции в цвет группы
-        local color = EmoteWheelConfig.groupColors[self.currentGroup] or {1, 1, 1}
-        button.bg:SetVertexColor(color[1] * 0.3, color[2] * 0.3, color[3] * 0.3, 0.7)
+        -- Применяем цветовые настройки
+        if not EmoteWheelDB.enableColors then
+            button.bg:SetVertexColor(0.2, 0.2, 0.2, 0.3)
+            button.border:SetVertexColor(0.6, 0.6, 0.6, 0.5)
+        else
+            local color = EmoteWheelConfig.groupColors[self.currentGroup] or {1, 1, 1}
+            button.bg:SetVertexColor(color[1] * 0.2, color[2] * 0.2, color[3] * 0.2, 0.3)
+            button.border:SetVertexColor(color[1], color[2], color[3], 0.5)
+        end
     end
 end
 
@@ -384,8 +391,20 @@ function EmoteWheel.Wheel:Show()
     -- Показываем перехватчик кликов
     self.clickCatcher:Show()
     
+    -- Обновляем все настройки
+    self:UpdateBackground()
+    self:UpdateColors()
+    self:UpdateButtonSizes()
+    
     -- Обновляем отображение для текущей группы
     self:SelectGroup(self.currentGroup)
+    
+    -- Регистрируем обработчик OnUpdate для отслеживания наведения
+    self.frame:SetScript("OnUpdate", function()
+        if EmoteWheelDB.hoverGroupSwitch then
+            self:HandleHoverGroupSwitch()
+        end
+    end)
     
     self.frame:Show()
 end
@@ -398,11 +417,165 @@ function EmoteWheel.Wheel:Hide()
 	
 	-- Гарантированно скрываем все тултипы
     GameTooltip:Hide()
-	
     self.clickCatcher:Hide()
+    self.frame:SetScript("OnUpdate", nil) -- Убираем обработчик
     self.frame:Hide()
 end
 
 function EmoteWheel.Wheel:SetGroup(groupIndex)
     self:SelectGroup(groupIndex)
+end
+
+-- Функция обновления размеров кнопок (ОБНОВЛЕННАЯ)
+function EmoteWheel.Wheel:UpdateButtonSizes()
+    local groupButtonSize = EmoteWheelDB.buttonSize or 50
+    local emoteButtonSize = EmoteWheelDB.emoteButtonSize or 35
+    
+    -- Обновляем размеры кнопок групп
+    for i, button in ipairs(self.groupButtons or {}) do
+        button:SetSize(groupButtonSize, groupButtonSize)
+        if button.colorBg then
+            button.colorBg:SetSize(groupButtonSize, groupButtonSize)
+        end
+        if button.border then
+            button.border:SetSize(groupButtonSize + 1, groupButtonSize + 1)
+        end
+    end
+    
+    -- Обновляем размеры кнопок эмоций (ширина и высота отдельно)
+    for i, button in ipairs(self.emoteButtons or {}) do
+        button:SetSize(emoteButtonSize * 3, emoteButtonSize) -- Ширина в 3 раза больше высоты
+    end
+    
+    -- Пересчитываем позиции
+    self:UpdateButtonPositions()
+end
+
+-- Функция обновления позиций кнопок (ОБНОВЛЕННАЯ)
+function EmoteWheel.Wheel:UpdateButtonPositions()
+    local groupCount = math.min(EmoteWheelConfig.maxGroups or 4, 8)
+    local groupButtonSize = EmoteWheelDB.buttonSize or 50
+    local emoteButtonSize = EmoteWheelDB.emoteButtonSize or 35
+    
+    local groupRadius = groupButtonSize * 1.2 -- Радиус для групп
+    local emoteRadius = groupRadius + emoteButtonSize * 1.5 -- Радиус для эмоций (дальше от центра)
+    
+    -- Обновляем позиции кнопок групп
+    for i, button in ipairs(self.groupButtons or {}) do
+        local angle = (i / groupCount) * 2 * math.pi
+        local x = math.cos(angle) * groupRadius
+        local y = math.sin(angle) * groupRadius
+        button:SetPoint("CENTER", self.frame, "CENTER", x, y)
+    end
+    
+    -- Обновляем позиции кнопок эмоций
+    self:UpdateEmoteButtons()
+end
+
+-- Функция обновления фона
+function EmoteWheel.Wheel:UpdateBackground()
+    if EmoteWheelDB.showBackground then
+        self.centerCircle:Show()
+    else
+        self.centerCircle:Hide()
+    end
+end
+
+-- Функция обновления цветов (ИСПРАВЛЕННАЯ)
+function EmoteWheel.Wheel:UpdateColors()
+    if not EmoteWheelDB.enableColors then
+        -- Отключаем цвета - используем нейтральные тона
+        self.centerCircle:SetVertexColor(0.3, 0.3, 0.3, 0.2) -- Темно-серый прозрачный
+        
+        -- Обновляем кнопки групп
+        for i, button in ipairs(self.groupButtons or {}) do
+            if i == self.currentGroup then
+                button.colorBg:SetVertexColor(0.8, 0.8, 0.8, 0.9) -- Светло-серый для выбранной
+                button.border:SetVertexColor(1, 1, 1, 0.8)
+            else
+                button.colorBg:SetVertexColor(0.5, 0.5, 0.5, 0.6) -- Серый для остальных
+                button.border:SetVertexColor(1, 1, 1, 0)
+            end
+        end
+        
+        -- Обновляем кнопки эмоций
+        for i, button in ipairs(self.emoteButtons or {}) do
+            button.bg:SetVertexColor(0.2, 0.2, 0.2, 0.3) -- Темно-серый фон
+            button.border:SetVertexColor(0.6, 0.6, 0.6, 0.5) -- Серый бордер
+            
+            -- Обновляем текст эмоций на белый
+            local text = button:GetRegions()
+            if text and text:GetObjectType() == "FontString" then
+                text:SetTextColor(1, 1, 1) -- Белый текст
+            end
+        end
+        
+        -- Обновляем заголовок группы
+        self.groupTitle:SetTextColor(1, 1, 1) -- Белый текст заголовка
+    else
+        -- Включаем цвета групп
+        self:SelectGroup(self.currentGroup)
+    end
+end
+
+-- Функция обработки смены группы по наведению
+function EmoteWheel.Wheel:HandleHoverGroupSwitch()
+    if not self.frame:IsVisible() then return end
+    
+    local x, y = GetCursorPosition()
+    local scale = self.frame:GetEffectiveScale()
+    x, y = x / scale, y / scale
+    
+    local centerX, centerY = self.frame:GetCenter()
+    local deltaX, deltaY = x - centerX, y - centerY
+    
+    -- Вычисляем расстояние от центра
+    local distance = math.sqrt(deltaX * deltaX + deltaY * deltaY)
+    local buttonSize = EmoteWheelDB.buttonSize or 50
+    local groupRadius = buttonSize * 1.2
+    
+    -- Если курсор в зоне кнопок групп
+    if distance > groupRadius - buttonSize/2 and distance < groupRadius + buttonSize/2 then
+        -- Вычисляем угол
+        local angle = math.atan2(deltaY, deltaX)
+        if angle < 0 then angle = angle + 2 * math.pi end
+        
+        -- Определяем группу по углу
+        local groupCount = math.min(EmoteWheelConfig.maxGroups or 4, 8)
+        local groupIndex = math.floor((angle / (2 * math.pi)) * groupCount) + 1
+        groupIndex = math.min(math.max(groupIndex, 1), groupCount)
+        
+        if groupIndex ~= self.currentGroup then
+            self:SelectGroup(groupIndex)
+        end
+    end
+end
+
+function EmoteWheel.Wheel:OnUpdate()
+    if not self:IsVisible() then return end
+    
+    local x, y = GetCursorPosition()
+    local scale = self.frame:GetEffectiveScale()
+    x, y = x / scale, y / scale
+    
+    local centerX, centerY = self.frame:GetCenter()
+    local deltaX, deltaY = x - centerX, y - centerY
+    
+    -- Вычисляем угол курсора относительно центра
+    local angle = math.atan2(deltaY, deltaX)
+    if angle < 0 then angle = angle + 2 * math.pi end
+    
+    -- Определяем, над какой кнопкой находится курсор
+    local buttonIndex = self:GetButtonIndexFromAngle(angle)
+    
+    -- Если курсор переместился на другую кнопку
+    if buttonIndex ~= self.currentHoverButton then
+        self.currentHoverButton = buttonIndex
+        
+        -- Если включена смена по наведению и это кнопка группы
+        if EmoteWheelDB.hoverGroupSwitch and self:IsGroupButton(buttonIndex) then
+            local groupIndex = self:GetGroupFromButton(buttonIndex)
+            self:SelectGroup(groupIndex)
+        end
+    end
 end
