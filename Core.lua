@@ -85,6 +85,7 @@ end
 
 function EmoteWheel:ShouldShowWheel()
     if not EmoteWheelDB.enabled then return false end
+    if not EmoteWheelDB.enableHotkey then return false end -- НОВОЕ: проверка включения горячей клавиши	
     
     local triggerKey = EmoteWheelDB.triggerKey or "SHIFT"
     

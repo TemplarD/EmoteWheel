@@ -139,9 +139,25 @@ function EmoteWheel:CreateOptionsFrame()
         EmoteWheel:Print("Названия эмоций " .. (EmoteWheelDB.showText and "включены" or "выключены"))
     end)
 	
+    -- Чекбокс включения горячей клавиши
+    local hotkeyCheckbox = CreateFrame("CheckButton", "EmoteWheelHotkeyCheckbox", scrollChild, "OptionsCheckButtonTemplate")
+    hotkeyCheckbox:SetPoint("TOPLEFT", textCheckbox, "BOTTOMLEFT", 0, -15)
+    hotkeyCheckbox:SetChecked(EmoteWheelDB.enableHotkey)
+
+    local hotkeyText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    hotkeyText:SetPoint("LEFT", hotkeyCheckbox, "RIGHT", 5, 0)
+    hotkeyText:SetText("Включить горячую клавишу")
+
+    hotkeyCheckbox:SetScript("OnClick", function(self)
+        EmoteWheelDB.enableHotkey = self:GetChecked()
+        EmoteWheel:Print("Горячая клавиша " .. (EmoteWheelDB.enableHotkey and "включена" or "выключена"))
+        -- Перерегистрируем обработчик
+        EmoteWheel:RegisterMouseHandler()
+    end)	
+	
     -- Выбор клавиши для вызова (НОВАЯ НАСТРОЙКА)
     local triggerText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    triggerText:SetPoint("TOPLEFT", textText, "BOTTOMLEFT", 0, -15)
+    triggerText:SetPoint("TOPLEFT", hotkeyCheckbox, "BOTTOMLEFT", 0, -15)
     triggerText:SetText("Клавиша для вызова:")
     
     local triggerDropdown = CreateFrame("Frame", "EmoteWheelTriggerDropdown", scrollChild, "UIDropDownMenuTemplate")
