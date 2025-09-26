@@ -266,7 +266,7 @@ function EmoteWheel:CreateOptionsFrame()
 		end
 	end)	
 	
--- Слайдер размера кнопок эмоций
+	-- Слайдер размера кнопок эмоций
 	local emoteButtonSizeText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	emoteButtonSizeText:SetPoint("TOPLEFT", buttonSizeSlider, "BOTTOMLEFT", 0, -15)
 	emoteButtonSizeText:SetText("Размер кнопок эмоций:")
@@ -337,6 +337,23 @@ function EmoteWheel:CreateOptionsFrame()
 	hoverCheckbox:SetScript("OnClick", function(self)
 		EmoteWheelDB.hoverGroupSwitch = self:GetChecked()
 		EmoteWheel:Print("Смена группы по наведению " .. (EmoteWheelDB.hoverGroupSwitch and "включена" or "выключена"))
+	end)	
+	
+	-- Чекбокс показа иконок групп
+	local iconsCheckbox = CreateFrame("CheckButton", "EmoteWheelIconsCheckbox", scrollChild, "OptionsCheckButtonTemplate")
+	iconsCheckbox:SetPoint("TOPLEFT", hoverCheckbox, "BOTTOMLEFT", 0, -15)
+	iconsCheckbox:SetChecked(EmoteWheelDB.showIcons)
+
+	local iconsText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	iconsText:SetPoint("LEFT", iconsCheckbox, "RIGHT", 5, 0)
+	iconsText:SetText("Показывать иконки групп")
+
+	iconsCheckbox:SetScript("OnClick", function(self)
+		EmoteWheelDB.showIcons = self:GetChecked()
+		-- Обновляем отображение кнопок групп
+		if EmoteWheel.Wheel and EmoteWheel.Wheel.UpdateGroupIcons then
+			EmoteWheel.Wheel:UpdateGroupIcons()
+		end
 	end)	
 	   
     -- Вызываем после создания всех элементов

@@ -49,5 +49,17 @@ EmoteWheelConfig = {
 	
     -- НОВЫЕ РЕЖИМЫ РАБОТЫ
     interactionMode = "CLICK", -- CLICK, HOVER, TREE
-    enableHoverPreview = true	
+    enableHoverPreview = true,
+	
+    -- Иконки для групп
+    groupIcons = {
+        "Interface\\Icons\\Ability_Druid_ChallangingRoar",    -- 1. Основные
+        "Interface\\Icons\\Ability_Warrior_BattleShout",      -- 2. Боевые
+        "Interface\\Icons\\Spell_Holy_BorrowedTime",          -- 3. Социальные
+        "Interface\\Icons\\Ability_Creature_Cursed_03",       -- 4. Реакции
+        "Interface\\Icons\\Ability_Rogue_Disguise",           -- 5. Звуки
+        "Interface\\Icons\\Ability_Hunter_Pet_Bear",          -- 6. Действия
+        "Interface\\Icons\\INV_Misc_QuestionMark",            -- 7. Разное
+        "Interface\\Icons\\Spell_Shadow_SoulGem"              -- 8. Специальные
+    }
 }

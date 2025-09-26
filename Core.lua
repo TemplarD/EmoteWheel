@@ -14,11 +14,13 @@ EmoteWheelDB = EmoteWheelDB or {
     showText = true,
     closeOnClick = true,
     triggerKey = "SHIFT", -- SHIFT, CTRL, ALT, NONE
+    enableHotkey = false, -- 	
+    showIcons = true, -- 	
     buttonSize = 50,           -- Размер кнопок групп
     emoteButtonSize = 35,      -- Размер кнопок эмоций
-    showBackground = true, -- Добавьте
-    enableColors = true, -- Добавьте
-    hoverGroupSwitch = false, -- Добавьте
+    showBackground = true, -- 
+    enableColors = true, -- 
+    hoverGroupSwitch = false, --
     log = {}
 }
 

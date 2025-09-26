@@ -168,6 +168,15 @@ function EmoteWheel.Wheel:CreateGroupButton(groupIndex, angle)
     -- bg:SetTexture("Interface\\Buttons\\WHITE8X8")
     bg:SetVertexColor(0, 0, 0, 0.5) -- Черная подложка
 	
+    -- Иконка группы (НОВОЕ)
+    local icon = button:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(28, 28)
+    icon:SetPoint("CENTER")
+    local iconPath = EmoteWheelConfig.groupIcons[groupIndex] or "Interface\\Icons\\INV_Misc_QuestionMark"
+    icon:SetTexture(iconPath)
+    button.icon = icon	
+	
+    -- Цветной фон	
     local colorBg = button:CreateTexture(nil, "ARTWORK")
     colorBg:SetSize(42, 42)
     colorBg:SetPoint("CENTER")
@@ -184,14 +193,15 @@ function EmoteWheel.Wheel:CreateGroupButton(groupIndex, angle)
     border:SetVertexColor(0.1, 0.1, 0.1, 1)
     button.border = border	
     
-    -- Номер группы в центре
+    -- Текст номера (будет скрыт при показе иконок)
     local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     text:SetPoint("CENTER")
     text:SetText(groupIndex)
     text:SetTextColor(1, 1, 1)
     text:SetShadowOffset(1, -1)
     text:SetShadowColor(0, 0, 0, 0.8)
-    self:ApplyFontSettings(text, "groupButtons") -- НОВОЕ	
+    self:ApplyFontSettings(text, "groupButtons")
+    button.text = text
     
     -- Обработчики событий
     button:SetScript("OnClick", function()
@@ -231,6 +241,21 @@ function EmoteWheel.Wheel:CreateGroupButton(groupIndex, angle)
     end)
     
     return button
+end
+
+-- Функция обновления отображения иконок
+function EmoteWheel.Wheel:UpdateGroupIcons()
+    for i, button in ipairs(self.groupButtons or {}) do
+        if EmoteWheelDB.showIcons then
+            button.icon:Show()
+            button.text:Hide()
+			button.colorBg:Hide() -- Скрываем цветной фон
+        else
+            button.icon:Hide()
+            button.text:Show()
+			button.colorBg:Show() -- Показываем цветной фон
+        end
+    end
 end
 
 function EmoteWheel.Wheel:CreateEmoteButtons()
@@ -336,32 +361,61 @@ function EmoteWheel.Wheel:SelectGroup(groupIndex)
     self.currentGroup = groupIndex
     EmoteWheelDB.currentGroup = groupIndex
     
-    -- Обновляем центральный круг цветом группы (сделаем его тоньше)
+    -- Обновляем центральный круг цветом группы
     local color = EmoteWheelConfig.groupColors[groupIndex] or {1, 1, 1}
-    self.centerCircle:SetVertexColor(color[1], color[2], color[3], 0.4) -- Более прозрачный
+    if EmoteWheelDB.enableColors then
+        self.centerCircle:SetVertexColor(color[1], color[2], color[3], 0.4)
+    else
+        self.centerCircle:SetVertexColor(0.3, 0.3, 0.3, 0.2)
+    end
     
-    -- ОБНОВЛЯЕМ НАЗВАНИЕ ГРУППЫ (НОВОЕ)
+    -- Обновляем название группы
     local groupData = EmoteWheelData.groups[groupIndex]
     local groupName = groupData and groupData.name or ("Группа "..groupIndex)
     self.groupTitle:SetText(groupName)
-    self.groupTitle:SetTextColor(color[1], color[2], color[3]) -- Цвет текста как у группы
+    
+    if EmoteWheelDB.enableColors then
+        self.groupTitle:SetTextColor(color[1], color[2], color[3])
+    else
+        self.groupTitle:SetTextColor(1, 1, 1)
+    end
 
     -- Обновляем кнопки эмоций с новыми цветами
     self:UpdateEmoteButtons()
     
-    -- Подсвечиваем выбранную группу
+     -- Подсвечиваем выбранную группу через увеличение (ИСПРАВЛЕННОЕ)
     for i, btn in ipairs(self.groupButtons) do
         if i == groupIndex then
-            btn.colorBg:SetVertexColor(1, 1, 1, 1.0) -- Белая подсветка выбранной
-            btn.border:SetVertexColor(1, 1, 1, 0.8) -- Белая обводка			
+            -- Выбранная группа - увеличиваем
+            if EmoteWheelDB.showIcons then
+                -- Для иконок: увеличиваем иконку, убираем цветной фон
+                btn.icon:SetSize(34, 34) -- Увеличиваем иконку
+                btn.colorBg:Hide()
+                btn.border:SetVertexColor(1, 1, 1, 0.8) -- Белая обводка
+            else
+                -- Для номеров: показываем цветной фон с белым цветом
+                btn.colorBg:Show()
+                btn.colorBg:SetVertexColor(1, 1, 1, 1.0) -- Белый фон
+                btn.border:SetVertexColor(1, 1, 1, 0.8) -- Белая обводка
+            end
             btn:SetAlpha(1.0)
-            btn:SetScale(0.85) -- Немного увеличиваем выбранную группу
+            btn:SetScale(1.1) -- Увеличиваем всю кнопку
         else
-            local btnColor = EmoteWheelConfig.groupColors[i] or {1, 1, 1}
-            btn.colorBg:SetVertexColor(btnColor[1], btnColor[2], btnColor[3], 0.6)
-            btn.border:SetVertexColor(1, 1, 1, 0) -- Прозрачная обводка			
-            btn:SetAlpha(0.6)
-            btn:SetScale(1.0) -- Обычный размер
+            -- Невыбранные группы
+            if EmoteWheelDB.showIcons then
+                -- Для иконок: нормальный размер, скрываем цветной фон
+                btn.icon:SetSize(28, 28) -- Нормальный размер
+                btn.colorBg:Hide()
+                btn.border:SetVertexColor(1, 1, 1, 0) -- Прозрачная обводка
+            else
+                -- Для номеров: показываем цветной фон
+                btn.colorBg:Show()
+                local btnColor = EmoteWheelConfig.groupColors[i] or {1, 1, 1}
+                btn.colorBg:SetVertexColor(btnColor[1], btnColor[2], btnColor[3], 0.6)
+                btn.border:SetVertexColor(1, 1, 1, 0) -- Прозрачная обводка
+            end
+            btn:SetAlpha(0.7)
+            btn:SetScale(1.0) -- Нормальный размер
         end
     end
 end
@@ -395,6 +449,7 @@ function EmoteWheel.Wheel:Show()
     self:UpdateBackground()
     self:UpdateColors()
     self:UpdateButtonSizes()
+    self:UpdateGroupIcons() -- НОВОЕ: обновляем иконки	
     
     -- Обновляем отображение для текущей группы
     self:SelectGroup(self.currentGroup)
@@ -426,7 +481,7 @@ function EmoteWheel.Wheel:SetGroup(groupIndex)
     self:SelectGroup(groupIndex)
 end
 
--- Функция обновления размеров кнопок (ОБНОВЛЕННАЯ)
+-- Функция обновления размеров кнопок (ОБНОВЛЕННАЯ С УЧЕТОМ ИКОНОК)
 function EmoteWheel.Wheel:UpdateButtonSizes()
     local groupButtonSize = EmoteWheelDB.buttonSize or 50
     local emoteButtonSize = EmoteWheelDB.emoteButtonSize or 35
@@ -434,17 +489,28 @@ function EmoteWheel.Wheel:UpdateButtonSizes()
     -- Обновляем размеры кнопок групп
     for i, button in ipairs(self.groupButtons or {}) do
         button:SetSize(groupButtonSize, groupButtonSize)
-        if button.colorBg then
-            button.colorBg:SetSize(groupButtonSize, groupButtonSize)
+        
+        -- Обновляем размеры элементов в зависимости от режима
+        if EmoteWheelDB.showIcons then
+            if i == self.currentGroup then
+                button.icon:SetSize(groupButtonSize * 0.68, groupButtonSize * 0.68) -- 68% для выбранной
+            else
+                button.icon:SetSize(groupButtonSize * 0.56, groupButtonSize * 0.56) -- 56% для остальных
+            end
+        else
+            if button.colorBg then
+                button.colorBg:SetSize(groupButtonSize, groupButtonSize)
+            end
         end
+        
         if button.border then
             button.border:SetSize(groupButtonSize + 1, groupButtonSize + 1)
         end
     end
     
-    -- Обновляем размеры кнопок эмоций (ширина и высота отдельно)
+    -- Обновляем размеры кнопок эмоций
     for i, button in ipairs(self.emoteButtons or {}) do
-        button:SetSize(emoteButtonSize * 3, emoteButtonSize) -- Ширина в 3 раза больше высоты
+        button:SetSize(emoteButtonSize * 3, emoteButtonSize)
     end
     
     -- Пересчитываем позиции
@@ -490,23 +556,28 @@ function EmoteWheel.Wheel:UpdateColors()
         -- Обновляем кнопки групп
         for i, button in ipairs(self.groupButtons or {}) do
             if i == self.currentGroup then
-                button.colorBg:SetVertexColor(0.8, 0.8, 0.8, 0.9) -- Светло-серый для выбранной
-                button.border:SetVertexColor(1, 1, 1, 0.8)
+                if EmoteWheelDB.showIcons then
+                    button.border:SetVertexColor(1, 1, 1, 0.8)
+                else
+                    button.colorBg:SetVertexColor(0.8, 0.8, 0.8, 0.9)
+                    button.border:SetVertexColor(1, 1, 1, 0.8)
+                end
             else
-                button.colorBg:SetVertexColor(0.5, 0.5, 0.5, 0.6) -- Серый для остальных
+                if not EmoteWheelDB.showIcons then
+                    button.colorBg:SetVertexColor(0.5, 0.5, 0.5, 0.6)
+                end
                 button.border:SetVertexColor(1, 1, 1, 0)
             end
         end
         
-        -- Обновляем кнопки эмоций
+        -- Обновляем кнопки эмоций и заголовок (без изменений)
         for i, button in ipairs(self.emoteButtons or {}) do
-            button.bg:SetVertexColor(0.2, 0.2, 0.2, 0.3) -- Темно-серый фон
-            button.border:SetVertexColor(0.6, 0.6, 0.6, 0.5) -- Серый бордер
+            button.bg:SetVertexColor(0.2, 0.2, 0.2, 0.3)
+            button.border:SetVertexColor(0.6, 0.6, 0.6, 0.5)
             
-            -- Обновляем текст эмоций на белый
             local text = button:GetRegions()
             if text and text:GetObjectType() == "FontString" then
-                text:SetTextColor(1, 1, 1) -- Белый текст
+                text:SetTextColor(1, 1, 1)
             end
         end
         
