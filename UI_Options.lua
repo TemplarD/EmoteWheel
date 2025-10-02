@@ -1,11 +1,11 @@
 --[[
-    Меню настроек для EmoteWheel - исправленная версия
+    Меню настроек для EmoteWheel - версия 2.0.0 с локализацией
 ]]
 
 function EmoteWheel:CreateOptionsFrame()
     -- Создаем фрейм настроек
     self.optionsFrame = CreateFrame("Frame", "EmoteWheelOptions", InterfaceOptionsFramePanelContainer)
-    self.optionsFrame.name = "Emote Wheel"
+    self.optionsFrame.name = EW_L("ADDON_NAME")
     self.optionsFrame:SetSize(1, 1) -- Важно для работы скролла
 	
     -- Создаем ScrollFrame
@@ -14,18 +14,12 @@ function EmoteWheel:CreateOptionsFrame()
     scrollFrame:SetPoint("BOTTOMRIGHT", -30, 10)
     
     -- Создаем child frame для содержимого
-    local scrollChild = CreateFrame("Frame", "EmoteWheelScrollFrame")
+    local scrollChild = CreateFrame("Frame", "EmoteWheelScrollChild")
     scrollFrame:SetScrollChild(scrollChild)
     scrollChild:SetWidth(InterfaceOptionsFramePanelContainer:GetWidth() - 40)
     scrollChild:SetHeight(1) -- Высота будет регулироваться по содержимому
     
-    -- Переносим всё содержимое в scrollChild
-	-- Заголовок	
-    local title = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", 16, -16)
-    title:SetText("Emote Wheel - Настройки")
-	
-   -- Автоматически рассчитываем высоту содержимого
+    -- Автоматически рассчитываем высоту содержимого
     local function UpdateScrollChildHeight()
         local height = 1
         local lastElement = instructionText -- или самый нижний элемент
@@ -36,10 +30,13 @@ function EmoteWheel:CreateOptionsFrame()
         end
         
         scrollChild:SetHeight(math.max(height, scrollFrame:GetHeight()))
-    end	
-
-    -- Все остальные элементы создаются относительно scrollChild, а не self.optionsFrame	
+    end
     
+    -- Заголовок	
+    local title = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", 16, -16)
+    title:SetText(EW_L("SETTINGS_TITLE"))
+	
     -- Чекбокс включения аддона
     local enableCheckbox = CreateFrame("CheckButton", "EmoteWheelEnableCheckbox", scrollChild, "OptionsCheckButtonTemplate")
     enableCheckbox:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -20)
@@ -47,21 +44,21 @@ function EmoteWheel:CreateOptionsFrame()
     
     local enableText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     enableText:SetPoint("LEFT", enableCheckbox, "RIGHT", 5, 0)
-    enableText:SetText("Включить аддон")
+    enableText:SetText(EW_L("SETTINGS_ENABLE"))
     
     enableCheckbox:SetScript("OnClick", function(self)
         EmoteWheelDB.enabled = self:GetChecked()
         if EmoteWheelDB.enabled then
-            EmoteWheel:Print("Аддон включен")
+            EmoteWheel:Print(EW_L("ADDON_ENABLED"))
         else
-            EmoteWheel:Print("Аддон выключен")
+            EmoteWheel:Print(EW_L("ADDON_DISABLED"))
         end
     end)
     
-    -- Выбор группы эмоций (ИСПРАВЛЕННЫЙ выпадающий список)
+    -- Выбор группы эмоций
     local groupText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     groupText:SetPoint("TOPLEFT", enableCheckbox, "BOTTOMLEFT", 0, -15)
-    groupText:SetText("Текущая группа эмоций:")
+    groupText:SetText(EW_L("SETTINGS_CURRENT_GROUP"))
     
     local groupDropdown = CreateFrame("Frame", "EmoteWheelGroupDropdown", scrollChild, "UIDropDownMenuTemplate")
     groupDropdown:SetPoint("TOPLEFT", groupText, "BOTTOMLEFT", 0, -10)
@@ -71,7 +68,7 @@ function EmoteWheel:CreateOptionsFrame()
     local function UpdateDropdownText()
         local groupIndex = EmoteWheelDB.currentGroup or 1
         local groupData = EmoteWheelData.groups[groupIndex]
-        local text = groupData and groupData.name or ("Группа " .. groupIndex)
+        local text = groupData and groupData.name or (EW_L("GROUP_MAIN") .. " " .. groupIndex)
         UIDropDownMenu_SetText(groupDropdown, text)
     end
     
@@ -81,7 +78,7 @@ function EmoteWheel:CreateOptionsFrame()
         
         for i = 1, (EmoteWheelConfig.maxGroups or 4) do
             local groupData = EmoteWheelData.groups[i]
-            info.text = groupData and groupData.name or ("Группа " .. i)
+            info.text = groupData and groupData.name or (EW_L("GROUP_MAIN") .. " " .. i)
             info.value = i
             info.func = function(button)
                 EmoteWheelDB.currentGroup = button.value
@@ -89,7 +86,7 @@ function EmoteWheel:CreateOptionsFrame()
                 if EmoteWheel.Wheel and EmoteWheel.Wheel.SetGroup then
                     EmoteWheel.Wheel:SetGroup(button.value)
                 end
-                EmoteWheel:Print("Выбрана группа: " .. info.text)
+                EmoteWheel:Print(EW_L("SETTINGS_CURRENT_GROUP") .. " " .. info.text)
             end
             info.checked = (i == EmoteWheelDB.currentGroup)
             UIDropDownMenu_AddButton(info)
@@ -101,8 +98,8 @@ function EmoteWheel:CreateOptionsFrame()
 	
 	-- Настройка размера шрифта эмоций
 	local fontSizeText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-	fontSizeText:SetPoint("TOPLEFT", groupDropdown, "BOTTOMLEFT", 0, -5)
-	fontSizeText:SetText("Размер шрифта эмоций:")
+	fontSizeText:SetPoint("TOPLEFT", groupDropdown, "BOTTOMLEFT", 0, -15)
+	fontSizeText:SetText(EW_L("SETTINGS_FONT_SIZE"))
 
 	local fontSizeSlider = CreateFrame("Slider", "EmoteWheelFontSizeSlider", scrollChild, "OptionsSliderTemplate")
 	fontSizeSlider:SetPoint("TOPLEFT", fontSizeText, "BOTTOMLEFT", 0, -15)
@@ -114,7 +111,7 @@ function EmoteWheel:CreateOptionsFrame()
 	fontSizeSlider:SetScript("OnValueChanged", function(self, value)
 		value = math.floor(value)
 		EmoteWheelConfig.fonts.emoteButtons.size = value
-		_G[self:GetName().."Text"]:SetText("Размер: " .. value)
+		_G[self:GetName().."Text"]:SetText(EW_L("SETTINGS_FONT_SIZE") .. ": " .. value)
 		-- Обновляем колесо если оно открыто
 		if EmoteWheel.Wheel and EmoteWheel.Wheel.frame and EmoteWheel.Wheel.frame:IsVisible() then
 			EmoteWheel.Wheel:SelectGroup(EmoteWheelDB.currentGroup or 1)
@@ -123,7 +120,7 @@ function EmoteWheel:CreateOptionsFrame()
 
 	_G[fontSizeSlider:GetName().."Low"]:SetText("6")
 	_G[fontSizeSlider:GetName().."High"]:SetText("30")
-	_G[fontSizeSlider:GetName().."Text"]:SetText("Размер: " .. (EmoteWheelConfig.fonts.emoteButtons.size or 12))	
+	_G[fontSizeSlider:GetName().."Text"]:SetText(EW_L("SETTINGS_FONT_SIZE") .. ": " .. (EmoteWheelConfig.fonts.emoteButtons.size or 12))	
     
     -- Чекбокс показа текста эмоций
     local textCheckbox = CreateFrame("CheckButton", "EmoteWheelTextCheckbox", scrollChild, "OptionsCheckButtonTemplate")
@@ -132,11 +129,11 @@ function EmoteWheel:CreateOptionsFrame()
     
     local textText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     textText:SetPoint("TOPLEFT", textCheckbox, "RIGHT", 5, 5)
-    textText:SetText("Показывать названия эмоций")
+    textText:SetText(EW_L("SETTINGS_SHOW_TEXT"))
     
     textCheckbox:SetScript("OnClick", function(self)
         EmoteWheelDB.showText = self:GetChecked()
-        EmoteWheel:Print("Названия эмоций " .. (EmoteWheelDB.showText and "включены" or "выключены"))
+        EmoteWheel:Print(EW_L("SETTINGS_SHOW_TEXT") .. " " .. (EmoteWheelDB.showText and EW_L("ADDON_ENABLED") or EW_L("ADDON_DISABLED")))
     end)
 	
     -- Чекбокс включения горячей клавиши
@@ -146,19 +143,19 @@ function EmoteWheel:CreateOptionsFrame()
 
     local hotkeyText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     hotkeyText:SetPoint("LEFT", hotkeyCheckbox, "RIGHT", 5, 0)
-    hotkeyText:SetText("Включить горячую клавишу")
+    hotkeyText:SetText(EW_L("SETTINGS_ENABLE_HOTKEY"))
 
     hotkeyCheckbox:SetScript("OnClick", function(self)
         EmoteWheelDB.enableHotkey = self:GetChecked()
-        EmoteWheel:Print("Горячая клавиша " .. (EmoteWheelDB.enableHotkey and "включена" or "выключена"))
+        EmoteWheel:Print(EW_L("SETTINGS_ENABLE_HOTKEY") .. " " .. (EmoteWheelDB.enableHotkey and EW_L("ADDON_ENABLED") or EW_L("ADDON_DISABLED")))
         -- Перерегистрируем обработчик
         EmoteWheel:RegisterMouseHandler()
     end)	
 	
-    -- Выбор клавиши для вызова (НОВАЯ НАСТРОЙКА)
+    -- Выбор клавиши для вызова
     local triggerText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     triggerText:SetPoint("TOPLEFT", hotkeyCheckbox, "BOTTOMLEFT", 0, -15)
-    triggerText:SetText("Клавиша для вызова:")
+    triggerText:SetText(EW_L("SETTINGS_TRIGGER_KEY"))
     
     local triggerDropdown = CreateFrame("Frame", "EmoteWheelTriggerDropdown", scrollChild, "UIDropDownMenuTemplate")
     triggerDropdown:SetPoint("TOPLEFT", triggerText, "BOTTOMLEFT", 0, -10)
@@ -168,10 +165,10 @@ function EmoteWheel:CreateOptionsFrame()
         local info = UIDropDownMenu_CreateInfo()
         
         local triggers = {
-            {text = "Shift + ПКМ", value = "SHIFT"},
-            {text = "Ctrl + ПКМ", value = "CTRL"},
-            {text = "Alt + ПКМ", value = "ALT"},
-            {text = "Только ПКМ", value = "NONE"}
+            {text = EW_L("TRIGGER_SHIFT"), value = "SHIFT"},
+            {text = EW_L("TRIGGER_CTRL"), value = "CTRL"},
+            {text = EW_L("TRIGGER_ALT"), value = "ALT"},
+            {text = EW_L("TRIGGER_NONE"), value = "NONE"}
         }
         
         for i, trigger in ipairs(triggers) do
@@ -180,7 +177,7 @@ function EmoteWheel:CreateOptionsFrame()
             info.func = function(button)
                 EmoteWheelDB.triggerKey = button.value
                 UIDropDownMenu_SetText(triggerDropdown, trigger.text)
-                EmoteWheel:Print("Клавиша вызова изменена на: " .. trigger.text)
+                EmoteWheel:Print(EW_L("SETTINGS_TRIGGER_KEY") .. " " .. trigger.text)
             end
             info.checked = (trigger.value == EmoteWheelDB.triggerKey)
             UIDropDownMenu_AddButton(info)
@@ -189,14 +186,19 @@ function EmoteWheel:CreateOptionsFrame()
     
     -- Устанавливаем начальный текст
     local currentTrigger = EmoteWheelDB.triggerKey or "SHIFT"
-    local triggerTextMap = {SHIFT = "Shift + ПКМ", CTRL = "Ctrl + ПКМ", ALT = "Alt + ПКМ", NONE = "Только ПКМ"}
+    local triggerTextMap = {
+        SHIFT = EW_L("TRIGGER_SHIFT"), 
+        CTRL = EW_L("TRIGGER_CTRL"), 
+        ALT = EW_L("TRIGGER_ALT"), 
+        NONE = EW_L("TRIGGER_NONE")
+    }
     UIDropDownMenu_SetText(triggerDropdown, triggerTextMap[currentTrigger])	
     
     -- Кнопка просмотра лога
     local logButton = CreateFrame("Button", nil, scrollChild, "UIPanelButtonTemplate")
     logButton:SetPoint("TOPLEFT", triggerDropdown, "BOTTOMLEFT", 0, -15)
     logButton:SetSize(120, 25)
-    logButton:SetText("Просмотр лога")
+    logButton:SetText(EW_L("BUTTON_VIEW_LOG"))
     logButton:SetScript("OnClick", function()
         self:ToggleLogFrame()
     end)
@@ -205,7 +207,7 @@ function EmoteWheel:CreateOptionsFrame()
     local testButton = CreateFrame("Button", nil, scrollChild, "UIPanelButtonTemplate")
     testButton:SetPoint("LEFT", logButton, "RIGHT", 10, 0)
     testButton:SetSize(120, 25)
-    testButton:SetText("Тест колеса")
+    testButton:SetText(EW_L("BUTTON_TEST_WHEEL"))
     testButton:SetScript("OnClick", function()
         if EmoteWheel.Wheel and EmoteWheel.Wheel.Show then
             EmoteWheel.Wheel:Show()
@@ -218,7 +220,7 @@ function EmoteWheel:CreateOptionsFrame()
     local resetButton = CreateFrame("Button", nil, scrollChild, "UIPanelButtonTemplate")
     resetButton:SetPoint("TOPLEFT", logButton, "BOTTOMLEFT", 0, -10)
     resetButton:SetSize(120, 25)
-    resetButton:SetText("Сбросить настройки")
+    resetButton:SetText(EW_L("BUTTON_RESET"))
 	resetButton:SetScript("OnClick", function()
 		EmoteWheelDB = {
 			enabled = true,
@@ -231,6 +233,8 @@ function EmoteWheel:CreateOptionsFrame()
 			showBackground = true,
 			enableColors = true,
 			hoverGroupSwitch = false,
+			showIcons = true,
+			enableHotkey = false,
 			log = {}
 		}
 		ReloadUI()
@@ -239,7 +243,7 @@ function EmoteWheel:CreateOptionsFrame()
     -- Инструкция по использованию
     local instructionText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     instructionText:SetPoint("TOPLEFT", resetButton, "BOTTOMLEFT", 0, -20)
-    instructionText:SetText("Использование: Shift+ПКМ для открытия колеса эмоций")
+    instructionText:SetText(EW_L("INSTRUCTION"))
     instructionText:SetTextColor(0.8, 0.8, 0.8)
     
     -- Создаем фрейм лога
@@ -248,7 +252,7 @@ function EmoteWheel:CreateOptionsFrame()
 	-- Слайдер размера кнопок групп
 	local buttonSizeText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	buttonSizeText:SetPoint("TOPLEFT", instructionText, "BOTTOMLEFT", 0, -15)
-	buttonSizeText:SetText("Размер кнопок групп:")
+	buttonSizeText:SetText(EW_L("SETTINGS_BUTTON_SIZE"))
 
 	local buttonSizeSlider = CreateFrame("Slider", "EmoteWheelButtonSizeSlider", scrollChild, "OptionsSliderTemplate")
 	buttonSizeSlider:SetPoint("TOPLEFT", buttonSizeText, "BOTTOMLEFT", 0, -10)
@@ -259,17 +263,21 @@ function EmoteWheel:CreateOptionsFrame()
 	buttonSizeSlider:SetScript("OnValueChanged", function(self, value)
 		value = math.floor(value)
 		EmoteWheelDB.buttonSize = value
-		_G[self:GetName().."Text"]:SetText("Размер: " .. value)
+		_G[self:GetName().."Text"]:SetText(EW_L("SETTINGS_BUTTON_SIZE") .. ": " .. value)
 		-- Обновляем колесо
 		if EmoteWheel.Wheel and EmoteWheel.Wheel.UpdateButtonSizes then
 			EmoteWheel.Wheel:UpdateButtonSizes()
 		end
-	end)	
+	end)
+	
+	_G[buttonSizeSlider:GetName().."Low"]:SetText("30")
+	_G[buttonSizeSlider:GetName().."High"]:SetText("80")
+	_G[buttonSizeSlider:GetName().."Text"]:SetText(EW_L("SETTINGS_BUTTON_SIZE") .. ": " .. (EmoteWheelDB.buttonSize or 50))
 	
 	-- Слайдер размера кнопок эмоций
 	local emoteButtonSizeText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	emoteButtonSizeText:SetPoint("TOPLEFT", buttonSizeSlider, "BOTTOMLEFT", 0, -15)
-	emoteButtonSizeText:SetText("Размер кнопок эмоций:")
+	emoteButtonSizeText:SetText(EW_L("SETTINGS_EMOTE_SIZE"))
 
 	local emoteButtonSizeSlider = CreateFrame("Slider", "EmoteWheelEmoteButtonSizeSlider", scrollChild, "OptionsSliderTemplate")
 	emoteButtonSizeSlider:SetPoint("TOPLEFT", emoteButtonSizeText, "BOTTOMLEFT", 0, -10)
@@ -280,7 +288,7 @@ function EmoteWheel:CreateOptionsFrame()
 	emoteButtonSizeSlider:SetScript("OnValueChanged", function(self, value)
 		value = math.floor(value)
 		EmoteWheelDB.emoteButtonSize = value
-		_G[self:GetName().."Text"]:SetText("Размер: " .. value)
+		_G[self:GetName().."Text"]:SetText(EW_L("SETTINGS_EMOTE_SIZE") .. ": " .. value)
 		-- Обновляем колесо
 		if EmoteWheel.Wheel and EmoteWheel.Wheel.UpdateButtonSizes then
 			EmoteWheel.Wheel:UpdateButtonSizes()
@@ -289,7 +297,7 @@ function EmoteWheel:CreateOptionsFrame()
 	
 	_G[emoteButtonSizeSlider:GetName().."Low"]:SetText("20")
 	_G[emoteButtonSizeSlider:GetName().."High"]:SetText("60")
-	_G[emoteButtonSizeSlider:GetName().."Text"]:SetText("Размер: " .. (EmoteWheelDB.emoteButtonSize or 35))	
+	_G[emoteButtonSizeSlider:GetName().."Text"]:SetText(EW_L("SETTINGS_EMOTE_SIZE") .. ": " .. (EmoteWheelDB.emoteButtonSize or 35))	
 	
 	-- Чекбокс фона колеса
 	local bgCheckbox = CreateFrame("CheckButton", "EmoteWheelBgCheckbox", scrollChild, "OptionsCheckButtonTemplate")
@@ -298,7 +306,7 @@ function EmoteWheel:CreateOptionsFrame()
 
 	local bgText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	bgText:SetPoint("LEFT", bgCheckbox, "RIGHT", 5, 0)
-	bgText:SetText("Показывать фон колеса")
+	bgText:SetText(EW_L("SETTINGS_SHOW_BG"))
 
 	bgCheckbox:SetScript("OnClick", function(self)
 		EmoteWheelDB.showBackground = self:GetChecked()
@@ -315,7 +323,7 @@ function EmoteWheel:CreateOptionsFrame()
 
 	local colorsText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	colorsText:SetPoint("LEFT", colorsCheckbox, "RIGHT", 5, 0)
-	colorsText:SetText("Включить цветовое оформление")
+	colorsText:SetText(EW_L("SETTINGS_ENABLE_COLORS"))
 
 	colorsCheckbox:SetScript("OnClick", function(self)
 		EmoteWheelDB.enableColors = self:GetChecked()
@@ -332,11 +340,11 @@ function EmoteWheel:CreateOptionsFrame()
 
 	local hoverText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	hoverText:SetPoint("LEFT", hoverCheckbox, "RIGHT", 5, 0)
-	hoverText:SetText("Смена группы по наведению")
+	hoverText:SetText(EW_L("SETTINGS_HOVER_SWITCH"))
 
 	hoverCheckbox:SetScript("OnClick", function(self)
 		EmoteWheelDB.hoverGroupSwitch = self:GetChecked()
-		EmoteWheel:Print("Смена группы по наведению " .. (EmoteWheelDB.hoverGroupSwitch and "включена" or "выключена"))
+		EmoteWheel:Print(EW_L("SETTINGS_HOVER_SWITCH") .. " " .. (EmoteWheelDB.hoverGroupSwitch and EW_L("ADDON_ENABLED") or EW_L("ADDON_DISABLED")))
 	end)	
 	
 	-- Чекбокс показа иконок групп
@@ -346,7 +354,7 @@ function EmoteWheel:CreateOptionsFrame()
 
 	local iconsText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	iconsText:SetPoint("LEFT", iconsCheckbox, "RIGHT", 5, 0)
-	iconsText:SetText("Показывать иконки групп")
+	iconsText:SetText(EW_L("SETTINGS_SHOW_ICONS"))
 
 	iconsCheckbox:SetScript("OnClick", function(self)
 		EmoteWheelDB.showIcons = self:GetChecked()
@@ -354,7 +362,28 @@ function EmoteWheel:CreateOptionsFrame()
 		if EmoteWheel.Wheel and EmoteWheel.Wheel.UpdateGroupIcons then
 			EmoteWheel.Wheel:UpdateGroupIcons()
 		end
-	end)	
+	end)
+	
+	-- НОВОЕ: Выбор иконок для групп
+	local groupIconsText = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	groupIconsText:SetPoint("TOPLEFT", iconsCheckbox, "BOTTOMLEFT", 0, -15)
+	groupIconsText:SetText("Выбор иконок для групп:")
+	
+	-- Создаем кнопки выбора иконок для каждой группы
+	self.groupIconButtons = {}
+	for i = 1, (EmoteWheelConfig.maxGroups or 4) do
+		local groupIconButton = CreateFrame("Button", "EmoteWheelGroupIconBtn"..i, scrollChild, "UIPanelButtonTemplate")
+		groupIconButton:SetSize(80, 25)
+		groupIconButton:SetPoint("TOPLEFT", groupIconsText, "BOTTOMLEFT", (i-1)*85, -10)
+		groupIconButton:SetText("Группа "..i)
+		groupIconButton.groupIndex = i
+		
+		groupIconButton:SetScript("OnClick", function(self)
+			self:SelectGroupIcon()
+		end)
+		
+		self.groupIconButtons[i] = groupIconButton
+	end
 	   
     -- Вызываем после создания всех элементов
     UpdateScrollChildHeight()	
@@ -363,7 +392,29 @@ function EmoteWheel:CreateOptionsFrame()
 	
 end
 
--- Фрейм лога (оставляем без изменений)
+-- НОВАЯ ФУНКЦИЯ: Выбор иконки для группы
+function EmoteWheel:SelectGroupIcon(groupIndex)
+    -- Создаем выпадающее меню для выбора иконки
+    local dropdown = CreateFrame("Frame", "EmoteWheelIconSelectDropdown", UIParent, "UIDropDownMenuTemplate")
+    
+    UIDropDownMenu_Initialize(dropdown, function(self, level)
+        local info = UIDropDownMenu_CreateInfo()
+        
+        -- Добавляем категории иконок
+        for categoryName, icons in pairs(EmoteWheelIconCategories) do
+            info.text = categoryName
+            info.hasArrow = true
+            info.value = categoryName
+            info.notCheckable = true
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end)
+    
+    -- Показываем меню у курсора
+    ToggleDropDownMenu(1, nil, dropdown, "cursor", 0, 0)
+end
+
+-- Фрейм лога (обновлен с локализацией)
 function EmoteWheel:CreateLogFrame()
     self.logFrame = CreateFrame("Frame", "EmoteWheelLogFrame", UIParent)
     self.logFrame:SetSize(400, 300)
@@ -387,7 +438,7 @@ function EmoteWheel:CreateLogFrame()
     -- Заголовок лога
     local title = self.logFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     title:SetPoint("TOP", 0, -15)
-    title:SetText("Лог EmoteWheel")
+    title:SetText(EW_L("LOG_TITLE"))
     
     -- Текст лога
     self.logContent = self.logFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -400,7 +451,7 @@ function EmoteWheel:CreateLogFrame()
     local closeButton = CreateFrame("Button", nil, self.logFrame, "UIPanelButtonTemplate")
     closeButton:SetPoint("BOTTOM", 0, 15)
     closeButton:SetSize(100, 25)
-    closeButton:SetText("Закрыть")
+    closeButton:SetText(CLOSE)
     closeButton:SetScript("OnClick", function()
         self.logFrame:Hide()
     end)
@@ -409,7 +460,7 @@ function EmoteWheel:CreateLogFrame()
     local clearButton = CreateFrame("Button", nil, self.logFrame, "UIPanelButtonTemplate")
     clearButton:SetPoint("BOTTOM", 0, 45)
     clearButton:SetSize(100, 25)
-    clearButton:SetText("Очистить лог")
+    clearButton:SetText(EW_L("LOG_CLEAR"))
     clearButton:SetScript("OnClick", function()
         EmoteWheelDB.log = {}
         self:UpdateLogDisplay()
@@ -419,13 +470,13 @@ end
 function EmoteWheel:UpdateLogDisplay()
     if not self.logContent then return end
     
-    local logText = "Лог действий EmoteWheel:\n\n"
+    local logText = EW_L("LOG_TITLE") .. ":\n\n"
     if EmoteWheelDB.log and #EmoteWheelDB.log > 0 then
         for i, entry in ipairs(EmoteWheelDB.log) do
             logText = logText .. entry .. "\n"
         end
     else
-        logText = logText .. "Лог пуст"
+        logText = logText .. EW_L("LOG_EMPTY")
     end
     
     self.logContent:SetText(logText)
