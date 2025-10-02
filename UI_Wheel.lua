@@ -172,9 +172,16 @@ function EmoteWheel.Wheel:CreateGroupButton(groupIndex, angle)
     local icon = button:CreateTexture(nil, "ARTWORK")
     icon:SetSize(28, 28)
     icon:SetPoint("CENTER")
-    local iconPath = EmoteWheelConfig.groupIcons[groupIndex] or "Interface\\Icons\\INV_Misc_QuestionMark"
+	
+    -- Используем пользовательскую иконку если есть, иначе иконку по умолчанию
+    local iconPath
+    if EmoteWheelDB.groupIcons and EmoteWheelDB.groupIcons[groupIndex] then
+        iconPath = EmoteWheelIcons:GetIconPath(EmoteWheelDB.groupIcons[groupIndex])
+    else
+        iconPath = EmoteWheelConfig.groupIcons[groupIndex] or "Interface\\Icons\\INV_Misc_QuestionMark"
+    end
     icon:SetTexture(iconPath)
-    button.icon = icon	
+    button.icon = icon
 	
     -- Цветной фон	
     local colorBg = button:CreateTexture(nil, "ARTWORK")

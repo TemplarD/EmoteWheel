@@ -117,3 +117,35 @@ EmoteWheelIconCategories = {
         "Spell_Nature_ThunderClap"
     }
 }
+
+-- Функция для получения иконки по имени
+function EmoteWheelIcons:GetIconPath(iconName)
+    return self[iconName] or "Interface\\Icons\\INV_Misc_QuestionMark"
+end
+
+-- Функция для получения списка всех иконок
+function EmoteWheelIcons:GetAllIcons()
+    local icons = {}
+    for name, path in pairs(self) do
+        if type(path) == "string" then
+            table.insert(icons, {name = name, path = path})
+        end
+    end
+    table.sort(icons, function(a, b) return a.name < b.name end)
+    return icons
+end
+
+-- Функция для поиска иконок по ключевому слову
+function EmoteWheelIcons:SearchIcons(searchTerm)
+    local results = {}
+    searchTerm = searchTerm:lower()
+    
+    for name, path in pairs(self) do
+        if type(path) == "string" and name:lower():find(searchTerm, 1, true) then
+            table.insert(results, {name = name, path = path})
+        end
+    end
+    
+    table.sort(results, function(a, b) return a.name < b.name end)
+    return results
+end

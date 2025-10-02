@@ -20,6 +20,7 @@ EmoteWheelDB = EmoteWheelDB or {
     emoteButtonSize = 35,      -- Размер кнопок эмоций
     showBackground = true, -- 
     enableColors = true, -- 
+    groupIcons = {}, -- ДОБАВЛЕНО: инициализация groupIcons	
     hoverGroupSwitch = false, --
     log = {}
 }
