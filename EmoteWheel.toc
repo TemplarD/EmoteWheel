@@ -2,12 +2,14 @@
 ## Title: Emote Wheel
 ## Notes: Wheel menu for quick emote selection
 ## Author: templard
-## Version: 1.1.0
-## SavedVariables: EmoteWheelDB
+## Version: 2.0.0
+## SavedVariables: EmoteWheelDB, EmoteWheelProfilesDB
 ## GitHub: https://github.com/templard/EmoteWheel
 
 Core.lua
 Config.lua
 Data_Emotes.lua
+Data_Icons.lua
+Locales\Locales.lua
 UI_Options.lua
 UI_Wheel.lua

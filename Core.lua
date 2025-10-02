@@ -1,11 +1,11 @@
 --[[
     Основной файл аддона EmoteWheel
-    Версия: 1.1.0
+    Версия: 2.0.0
 ]]
 
 -- Глобальная таблица аддона
 EmoteWheel = {}
-EmoteWheel.VERSION = "1.1.0"
+EmoteWheel.VERSION = "2.0.0"
 
 -- База данных для сохранения настроек
 EmoteWheelDB = EmoteWheelDB or {
@@ -24,9 +24,31 @@ EmoteWheelDB = EmoteWheelDB or {
     log = {}
 }
 
+-- Новая база данных для профилей (будет использоваться в следующих шагах)
+EmoteWheelProfilesDB = EmoteWheelProfilesDB or {
+    profiles = {},
+    currentProfile = "default"
+}
+
+-- Временная функция локализации до загрузки системы локализации
+local function SafeLocale(key)
+    if EmoteWheelLocales and EmoteWheelLocales.GetString then
+        return EmoteWheelLocales:GetString(key)
+    end
+    return key
+end
+
 -- Функция инициализации аддона
 function EmoteWheel:OnInitialize()
-    self:Print("EmoteWheel v" .. self.VERSION .. " загружен. Используйте /ew для настроек.")
+    -- Инициализируем систему локализации после её загрузки
+    self.L = function(key)
+        if EmoteWheelLocales and EmoteWheelLocales.GetString then
+            return EmoteWheelLocales:GetString(key)
+        end
+        return key
+    end
+    
+    self:Print(string.format(SafeLocale("ADDON_LOADED"), self.VERSION))
     
     -- Сначала создаем настройки
     self:CreateOptionsFrame()
@@ -55,7 +77,7 @@ function EmoteWheel:HandleSlashCommand(msg)
         InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
     elseif msg == "toggle" then
         EmoteWheelDB.enabled = not EmoteWheelDB.enabled
-        self:Print("Аддон " .. (EmoteWheelDB.enabled and "включен" or "выключен"))
+        self:Print(EmoteWheelDB.enabled and SafeLocale("ADDON_ENABLED") or SafeLocale("ADDON_DISABLED"))
     elseif msg == "show" or msg == "menu" then
         if self.Wheel and self.Wheel.Show then
             self.Wheel:Show()
@@ -66,10 +88,10 @@ function EmoteWheel:HandleSlashCommand(msg)
         self:Print("Версия: " .. self.VERSION)
     else
         self:Print("Доступные команды:")
-        self:Print("/ew config - Открыть настройки")
-        self:Print("/ew show - Показать колесо эмоций")
-        self:Print("/ew toggle - Включить/выключить аддон")
-        self:Print("/ew version - Показать версию")
+        self:Print("/ew config - " .. SafeLocale("CMD_CONFIG"))
+        self:Print("/ew show - " .. SafeLocale("CMD_SHOW"))
+        self:Print("/ew toggle - " .. SafeLocale("CMD_TOGGLE"))
+        self:Print("/ew version - " .. SafeLocale("CMD_VERSION"))
     end
 end
 
@@ -87,7 +109,7 @@ end
 
 function EmoteWheel:ShouldShowWheel()
     if not EmoteWheelDB.enabled then return false end
-    if not EmoteWheelDB.enableHotkey then return false end -- НОВОЕ: проверка включения горячей клавиши	
+    if not EmoteWheelDB.enableHotkey then return false end
     
     local triggerKey = EmoteWheelDB.triggerKey or "SHIFT"
     
