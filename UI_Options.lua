@@ -461,17 +461,15 @@ function EmoteWheel:CreateOptionsFrame()
 	
 end
 
--- НОВАЯ ФУНКЦИЯ: Выбор иконки для группы
+-- НОВАЯ ФУНКЦИЯ: Выбор иконки для группы (компактная версия)
 function EmoteWheel:SelectGroupIcon(groupIndex)
     if not groupIndex then return end
     
-    -- ИСПРАВЛЕНО: Используем стандартный фрейм вместо BasicFrameTemplateWithInset
+    -- Создаем фрейм выбора иконки
     local iconSelector = CreateFrame("Frame", "EmoteWheelIconSelector", UIParent)
-    iconSelector:SetSize(400, 500)
+    iconSelector:SetSize(450, 500)
     iconSelector:SetPoint("CENTER")
     iconSelector:SetFrameStrata("DIALOG")
-    
-    -- Создаем бэкграунд вручную
     iconSelector:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
         edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
@@ -480,15 +478,12 @@ function EmoteWheel:SelectGroupIcon(groupIndex)
         edgeSize = 32,
         insets = { left = 11, right = 12, top = 12, bottom = 11 }
     })
-    iconSelector:SetBackdropColor(0, 0, 0, 1)
-    
     iconSelector:SetMovable(true)
     iconSelector:EnableMouse(true)
     iconSelector:RegisterForDrag("LeftButton")
     iconSelector:SetScript("OnDragStart", iconSelector.StartMoving)
     iconSelector:SetScript("OnDragStop", iconSelector.StopMovingOrSizing)
-    iconSelector:Hide()
-    
+
     -- Заголовок
     local title = iconSelector:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     title:SetPoint("TOP", 0, -15)
@@ -499,45 +494,41 @@ function EmoteWheel:SelectGroupIcon(groupIndex)
     searchBox:SetSize(300, 20)
     searchBox:SetPoint("TOP", 0, -40)
     searchBox:SetAutoFocus(false)
-    searchBox:SetText("")
     
     local searchLabel = iconSelector:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     searchLabel:SetPoint("BOTTOM", searchBox, "TOP", 0, 5)
     searchLabel:SetText("Поиск иконок:")
-    
-    -- Скроллируемый фрейм для иконок
-    local scrollFrame = CreateFrame("ScrollFrame", "EmoteWheelIconScroll", iconSelector, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 20, -70)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -40, 50)
-    
-    local scrollChild = CreateFrame("Frame", "EmoteWheelIconScrollChild")
-    scrollFrame:SetScrollChild(scrollChild)
-    scrollChild:SetWidth(350)
-    scrollChild:SetHeight(1)
-    
+
+    -- Контейнер для иконок (простой фрейм без скролла)
+    local iconsContainer = CreateFrame("Frame", nil, iconSelector)
+    iconsContainer:SetPoint("TOPLEFT", 20, -70)
+    iconsContainer:SetPoint("BOTTOMRIGHT", -20, 50)
+
     -- Кнопки действий
     local cancelButton = CreateFrame("Button", nil, iconSelector, "UIPanelButtonTemplate")
     cancelButton:SetSize(100, 25)
     cancelButton:SetPoint("BOTTOMRIGHT", -10, 10)
     cancelButton:SetText("Отмена")
-    cancelButton:SetScript("OnClick", function() iconSelector:Hide() end)
+    cancelButton:SetScript("OnClick", function() 
+        iconSelector:Hide() 
+    end)
     
     local defaultButton = CreateFrame("Button", nil, iconSelector, "UIPanelButtonTemplate")
     defaultButton:SetSize(120, 25)
     defaultButton:SetPoint("BOTTOM", 0, 10)
     defaultButton:SetText("По умолчанию")
     defaultButton:SetScript("OnClick", function()
-        -- ИСПРАВЛЕНО: Безопасное обращение
-        if not EmoteWheelDB.groupIcons then
-            EmoteWheelDB.groupIcons = {}
-        end
+        if not EmoteWheelDB.groupIcons then EmoteWheelDB.groupIcons = {} end
         EmoteWheelDB.groupIcons[groupIndex] = nil
-        self:UpdateGroupIconButton(groupIndex)
+        EmoteWheel:UpdateGroupIconButton(groupIndex)
         iconSelector:Hide()
-        EmoteWheel:Print("Иконка для группы " .. groupIndex .. " сброшена к значению по умолчанию")
+        EmoteWheel:Print("Иконка для группы " .. groupIndex .. " сброшена")
     end)
+
+    -- Таблица для хранения кнопок иконок
+    local iconButtons = {}
     
-    -- Функция обновления списка иконок
+    -- Функция обновления списка иконок (КОМПАКТНАЯ)
     local function UpdateIconList(searchTerm)
         local icons
         if searchTerm and searchTerm ~= "" then
@@ -546,88 +537,86 @@ function EmoteWheel:SelectGroupIcon(groupIndex)
             icons = EmoteWheelIcons:GetAllIcons()
         end
         
-        -- Очищаем предыдущие кнопки
-        for i = 1, scrollChild:GetNumChildren() do
-            local child = select(i, scrollChild:GetChildren())
-            if child and child.iconIndex then
-                child:Hide()
+        -- УДАЛЯЕМ все старые кнопки
+        for i, btn in ipairs(iconButtons) do
+            if btn then
+                btn:Hide()
+                btn:SetParent(nil)
             end
         end
+        iconButtons = {}
         
-        -- Создаем кнопки для иконок
-        local buttonHeight = 40
-        local buttonsPerRow = 3
-        local buttonWidth = 110
+        -- СОЗДАЕМ новые кнопки (КОМПАКТНО)
+        local iconSize = 35  -- Размер иконки
+        local iconsPerRow = 8  -- Иконок в строке
+        local spacing = 2     -- Отступ между иконками
         
         for i, iconData in ipairs(icons) do
-            local row = math.floor((i-1) / buttonsPerRow)
-            local col = (i-1) % buttonsPerRow
+            local row = math.floor((i-1) / iconsPerRow)
+            local col = (i-1) % iconsPerRow
             
-            local iconButton = CreateFrame("Button", nil, scrollChild)
-            iconButton:SetSize(buttonWidth, buttonHeight)
-            iconButton:SetPoint("TOPLEFT", 10 + col * (buttonWidth + 5), -10 - row * (buttonHeight + 5))
-            iconButton.iconData = iconData
-            iconButton.iconIndex = i
+            local iconButton = CreateFrame("Button", nil, iconsContainer)
+            iconButton:SetSize(iconSize, iconSize)
+            iconButton:SetPoint("TOPLEFT", iconsContainer, "TOPLEFT", 
+                col * (iconSize + spacing), 
+                -row * (iconSize + spacing))
             
-            -- Фон кнопки (ИСПРАВЛЕНО: используем SetTexture вместо SetColorTexture)
-            local bg = iconButton:CreateTexture(nil, "BACKGROUND")
-            bg:SetAllPoints(true)
-            bg:SetTexture("Interface\\Tooltips\\UI-Tooltip-Background")
-            bg:SetVertexColor(0.2, 0.2, 0.2, 0.5)
+            -- Иконка (занимает всю кнопку)
+            local iconTex = iconButton:CreateTexture(nil, "ARTWORK")
+            iconTex:SetAllPoints(true)
+            iconTex:SetTexture(iconData.path)
             
-            -- Текстура иконки
-            local iconTexture = iconButton:CreateTexture(nil, "ARTWORK")
-            iconTexture:SetSize(32, 32)
-            iconTexture:SetPoint("LEFT", 5, 0)
-            iconTexture:SetTexture(iconData.path)
-            
-            -- Название иконки (обрезаем если длинное)
-            local iconName = iconData.name
-            if #iconName > 12 then
-                iconName = iconName:sub(1, 10) .. "..."
-            end
-            
-            local nameText = iconButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-            nameText:SetPoint("LEFT", iconTexture, "RIGHT", 5, 0)
-            nameText:SetText(iconName)
-            nameText:SetWidth(60)
-            nameText:SetJustifyH("LEFT")
-            
-            -- Подсветка при наведении (ИСПРАВЛЕНО: используем стандартную текстуру)
+            -- Подсветка при наведении
             local highlight = iconButton:CreateTexture(nil, "HIGHLIGHT")
             highlight:SetAllPoints(true)
             highlight:SetTexture("Interface\\Buttons\\UI-Common-MouseHilight")
             highlight:SetBlendMode("ADD")
             
-            iconButton:SetScript("OnClick", function(self)
-                -- ИСПРАВЛЕНО: Безопасное обращение
-                if not EmoteWheelDB.groupIcons then
-                    EmoteWheelDB.groupIcons = {}
-                end
-                EmoteWheelDB.groupIcons[groupIndex] = self.iconData.name
-                iconSelector:Hide() -- Закрываем селектор
+            -- Рамка при наведении
+            local border = iconButton:CreateTexture(nil, "BORDER")
+            border:SetAllPoints(true)
+            border:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
+            border:SetBlendMode("ADD")
+            border:SetAlpha(0)
+            iconButton.border = border
+            
+            -- Обработчик клика
+            iconButton:SetScript("OnClick", function()
+                if not EmoteWheelDB.groupIcons then EmoteWheelDB.groupIcons = {} end
+                EmoteWheelDB.groupIcons[groupIndex] = iconData.name
+                iconSelector:Hide()
                 EmoteWheel:UpdateGroupIconButton(groupIndex)
-                EmoteWheel:Print("Иконка для группы " .. groupIndex .. " изменена на: " .. self.iconData.name)
+                EmoteWheel:Print("Иконка для группы " .. groupIndex .. " изменена на: " .. iconData.name)
             end)
             
-            iconButton:SetScript("OnEnter", function(self)
-                -- ИСПРАВЛЕНО: меняем цвет через SetVertexColor
-                bg:SetVertexColor(0.3, 0.3, 0.3, 0.7)
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            -- Обработчик наведения (ПОДСКАЗКА С ИМЕНЕМ)
+            iconButton:SetScript("OnEnter", function()
+                border:SetAlpha(1) -- Показываем рамку
+                GameTooltip:SetOwner(iconButton, "ANCHOR_RIGHT")
                 GameTooltip:SetText(iconData.name)
                 GameTooltip:Show()
             end)
             
-            iconButton:SetScript("OnLeave", function(self)
-                -- ИСПРАВЛЕНО: возвращаем исходный цвет
-                bg:SetVertexColor(0.2, 0.2, 0.2, 0.5)
+            iconButton:SetScript("OnLeave", function()
+                border:SetAlpha(0) -- Скрываем рамку
                 GameTooltip:Hide()
             end)
+            
+            -- Сохраняем кнопку
+            table.insert(iconButtons, iconButton)
         end
         
-        -- Обновляем высоту скролл-части
-        local rows = math.ceil(#icons / buttonsPerRow)
-        scrollChild:SetHeight(math.max(rows * (buttonHeight + 5), scrollFrame:GetHeight()))
+        -- Информация о количестве
+        local countText = iconSelector:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        countText:SetPoint("BOTTOM", iconsContainer, "TOP", 0, 5)
+        countText:SetText("Найдено иконок: " .. #icons)
+        countText:SetTextColor(0.8, 0.8, 0.8)
+        
+        -- Временно сохраняем текст для обновления
+        if iconSelector.countText then
+            iconSelector.countText:Hide()
+        end
+        iconSelector.countText = countText
     end
     
     -- Обработчик поиска
@@ -635,10 +624,21 @@ function EmoteWheel:SelectGroupIcon(groupIndex)
         UpdateIconList(self:GetText())
     end)
     
-    -- Инициализируем список
-    UpdateIconList("")
+    -- Обработчик закрытия фрейма
+    iconSelector:SetScript("OnHide", function()
+        -- Очищаем кнопки при закрытии
+        for i, btn in ipairs(iconButtons) do
+            if btn then
+                btn:Hide()
+                btn:SetParent(nil)
+            end
+        end
+        iconButtons = {}
+    end)
     
-    -- Показываем селектор
+    -- Инициализация
+    searchBox:SetText("")
+    UpdateIconList("")
     iconSelector:Show()
 end
 
