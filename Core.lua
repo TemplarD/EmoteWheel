@@ -41,17 +41,20 @@ end
 
 -- Функция инициализации аддона
 function EmoteWheel:OnInitialize()
-    -- Инициализируем систему локализации после её загрузки
-    self.L = function(key)
-        if EmoteWheelLocales and EmoteWheelLocales.GetString then
-            return EmoteWheelLocales:GetString(key)
-        end
-        return key
+    -- Сначала загружаем все данные
+    if not EmoteWheelData then
+        self:Print("Ошибка: EmoteWheelData не загружен!")
+        return
     end
     
-    self:Print(string.format(SafeLocale("ADDON_LOADED"), self.VERSION))
+    if not EmoteWheelConfig then
+        self:Print("Ошибка: EmoteWheelConfig не загружен!")
+        return
+    end
     
-    -- Сначала создаем настройки
+    self:Print("EmoteWheel v" .. self.VERSION .. " загружен. Используйте /ew для настроек.")
+    
+    -- Затем создаем настройки
     self:CreateOptionsFrame()
     
     -- Затем инициализируем колесо

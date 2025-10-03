@@ -9,6 +9,7 @@
 Core.lua
 Config.lua
 Data_Emotes.lua
+Data_AllEmotes.lua
 Data_Icons.lua
 Locales\Locales.lua
 UI_Options.lua
